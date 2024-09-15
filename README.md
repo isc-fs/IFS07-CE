@@ -1,7 +1,7 @@
 
 ![ISC Logo](http://iscracingteam.com/wp-content/uploads/2022/03/Picture5.jpg)
 
-# IFS06 - Control Electronics
+# IFS07 - Control Electronics
 
 Repositorio para el departamento de Control Electronics del IFS07 de la temporada 2024/2025.
 
