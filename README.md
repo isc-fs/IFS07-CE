@@ -1,10 +1,9 @@
-# Plantilla
 
 ![ISC Logo](http://iscracingteam.com/wp-content/uploads/2022/03/Picture5.jpg)
 
 # IFS06 - [department]
 
-Repositorio para el departamento de [department] del IFS06 de la temporada 20XX/20XX.
+Repositorio para el departamento de Control Electronics del IFS07 de la temporada 2024/2025.
 
 ## Primeros pasos:
 1. Crea una cuenta en GitHub si aún no tienes una.
