@@ -16,6 +16,6 @@ Repositorio para el departamento de Control Electronics del IFS07 de la temporad
     * Puede que quieras guardar una copia de [GitHub's Git Cheat Sheet](https://services.github.com/kit/downloads/github-git-cheat-sheet.pdf) como referencia.
     
 3. Clona este repositorio en tu ordenador utilizando las URLs:
-    * SSH: 
-    * HTTPS:
+    * SSH: `git@github.com:isc-fs/IFS07-CE.git`
+    * HTTPS: `https://github.com/isc-fs/IFS07-CE.git`
 
