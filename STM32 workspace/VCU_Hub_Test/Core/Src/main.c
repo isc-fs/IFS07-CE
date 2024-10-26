@@ -140,7 +140,7 @@ int inv_t_air;          // Lectura de air temperature
 int inv_n_actual;       // Lectura de speed actual value
 
 // Sensores
-uint16_t buffer_adc[3]; //Buffer para DMA
+uint16_t buffer_adc[1]; //Buffer para DMA, cambiado a 1 porque quitamos acelerador
 int s1_aceleracion = 0; // Lectura del sensor 1 del pedal de aceleración
 int s2_aceleracion = 0; // Lectura del sensor 2 del pedal de aceleración
 int s1_aceleracion_aux = 0;
@@ -247,7 +247,7 @@ int main(void)
 	HAL_Delay(2000);
 
 	//HAL_ADCEx_Calibration_Start(&hadc1, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED);
-	if (HAL_ADC_Start_DMA(&hadc1, (uint32_t*) buffer_adc, 3) != HAL_OK) {
+	if (HAL_ADC_Start_DMA(&hadc1, (uint32_t*) buffer_adc, 1) != HAL_OK) {
 #if DEBUG
 		print("Error al inicializar ADC_DMA");
 #endif
@@ -396,9 +396,9 @@ int main(void)
 	TxHeader_Inv.DataLength = 1;
 	TxHeader_Inv.IdType = FDCAN_STANDARD_ID;
 
-	TxData_Inv[0] = 0x1;
+	TxData_Inv[0] = 0x1; // Mandamos 1 al HUB para que empiece a comunicar datos
 	HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan3, &TxHeader_Inv, TxData_Inv);
-	// SEGUIR DESDE AQU�?
+
 
 /*
 
@@ -600,7 +600,6 @@ static void MX_ADC1_Init(void)
   /* USER CODE END ADC1_Init 0 */
 
   ADC_MultiModeTypeDef multimode = {0};
-  ADC_ChannelConfTypeDef sConfig = {0};
 
   /* USER CODE BEGIN ADC1_Init 1 */
 
@@ -611,14 +610,12 @@ static void MX_ADC1_Init(void)
   hadc1.Instance = ADC1;
   hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV2;
   hadc1.Init.Resolution = ADC_RESOLUTION_12B;
-  hadc1.Init.ScanConvMode = ADC_SCAN_ENABLE;
+  hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
   hadc1.Init.EOCSelection = ADC_EOC_SEQ_CONV;
   hadc1.Init.LowPowerAutoWait = DISABLE;
   hadc1.Init.ContinuousConvMode = ENABLE;
-  hadc1.Init.NbrOfConversion = 3;
+  hadc1.Init.NbrOfConversion = 1;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
-  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
-  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc1.Init.ConversionDataManagement = ADC_CONVERSIONDATA_DMA_CIRCULAR;
   hadc1.Init.Overrun = ADC_OVR_DATA_PRESERVED;
   hadc1.Init.LeftBitShift = ADC_LEFTBITSHIFT_NONE;
@@ -633,38 +630,6 @@ static void MX_ADC1_Init(void)
   */
   multimode.Mode = ADC_MODE_INDEPENDENT;
   if (HAL_ADCEx_MultiModeConfigChannel(&hadc1, &multimode) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure Regular Channel
-  */
-  sConfig.Channel = ADC_CHANNEL_4;
-  sConfig.Rank = ADC_REGULAR_RANK_1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_64CYCLES_5;
-  sConfig.SingleDiff = ADC_SINGLE_ENDED;
-  sConfig.OffsetNumber = ADC_OFFSET_NONE;
-  sConfig.Offset = 0;
-  sConfig.OffsetSignedSaturation = DISABLE;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure Regular Channel
-  */
-  sConfig.Channel = ADC_CHANNEL_5;
-  sConfig.Rank = ADC_REGULAR_RANK_2;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure Regular Channel
-  */
-  sConfig.Channel = ADC_CHANNEL_2;
-  sConfig.Rank = ADC_REGULAR_RANK_3;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();
   }
@@ -1245,9 +1210,9 @@ void printHex(uint8_t value) {
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
-	s1_aceleracion = buffer_adc[0];
-	s2_aceleracion = buffer_adc[1];
-	s_freno = buffer_adc[2];
+	// s1_aceleracion = buffer_adc[0];
+	// s2_aceleracion = buffer_adc[1];
+	s_freno = buffer_adc[0];
 }
 
 void ADC2_Select_FR(void) {
@@ -1371,9 +1336,9 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 
 		} else if (hfdcan->Instance == FDCAN3){
 			if (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &RxHeader_Hub, RxData_Hub) == HAL_OK){
-				if (RxHeader_Hub.Indentifier == 0x111){
-					s1_aceleracion = ((int)RxData_Hub[0] << 8) | RxData_Hub[1];
-					s2_aceleracion = ((int)RxData_Hub[2] << 8) | RxData_Hub[3];
+				if (RxHeader_Hub.Indentifier == 0x111){ // señal enviada por la HUB a la ECU con los datos de aceleración
+					s1_aceleracion = ((int)RxData_Hub[0] << 8) | RxData_Hub[1]; // juntamos los bytes 1 y 2 del envío del HUB
+					s2_aceleracion = ((int)RxData_Hub[2] << 8) | RxData_Hub[3]; // juntamos los bytes 3 y 4 del envío del HUB
 				}
 			}
 		}

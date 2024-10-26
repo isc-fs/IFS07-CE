@@ -63,14 +63,10 @@ void Error_Handler(void);
 #define START_BUTTON_LED_GPIO_Port GPIOC
 #define RTDS_Pin GPIO_PIN_1
 #define RTDS_GPIO_Port GPIOC
-#define S_APPS_1_Pin GPIO_PIN_4
-#define S_APPS_1_GPIO_Port GPIOC
 #define SUSPENSION_RL_Pin GPIO_PIN_5
 #define SUSPENSION_RL_GPIO_Port GPIOC
 #define SUSPENSION_RR_Pin GPIO_PIN_0
 #define SUSPENSION_RR_GPIO_Port GPIOB
-#define S_APPS_2_Pin GPIO_PIN_1
-#define S_APPS_2_GPIO_Port GPIOB
 #define S_FRENO_Pin GPIO_PIN_11
 #define S_FRENO_GPIO_Port GPIOF
 #define SUSPENSION_FL_Pin GPIO_PIN_13

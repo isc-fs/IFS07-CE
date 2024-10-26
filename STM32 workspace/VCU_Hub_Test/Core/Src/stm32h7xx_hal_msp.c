@@ -106,21 +106,19 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
     __HAL_RCC_GPIOB_CLK_ENABLE();
     __HAL_RCC_GPIOF_CLK_ENABLE();
     /**ADC1 GPIO Configuration
-    PC4     ------> ADC1_INP4
     PC5     ------> ADC1_INP8
     PB0     ------> ADC1_INP9
-    PB1     ------> ADC1_INP5
     PF11     ------> ADC1_INP2
     */
-    GPIO_InitStruct.Pin = S_APPS_1_Pin|SUSPENSION_RL_Pin;
+    GPIO_InitStruct.Pin = SUSPENSION_RL_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+    HAL_GPIO_Init(SUSPENSION_RL_GPIO_Port, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin = SUSPENSION_RR_Pin|S_APPS_2_Pin;
+    GPIO_InitStruct.Pin = SUSPENSION_RR_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+    HAL_GPIO_Init(SUSPENSION_RR_GPIO_Port, &GPIO_InitStruct);
 
     GPIO_InitStruct.Pin = S_FRENO_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
@@ -218,15 +216,13 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc)
     }
 
     /**ADC1 GPIO Configuration
-    PC4     ------> ADC1_INP4
     PC5     ------> ADC1_INP8
     PB0     ------> ADC1_INP9
-    PB1     ------> ADC1_INP5
     PF11     ------> ADC1_INP2
     */
-    HAL_GPIO_DeInit(GPIOC, S_APPS_1_Pin|SUSPENSION_RL_Pin);
+    HAL_GPIO_DeInit(SUSPENSION_RL_GPIO_Port, SUSPENSION_RL_Pin);
 
-    HAL_GPIO_DeInit(GPIOB, SUSPENSION_RR_Pin|S_APPS_2_Pin);
+    HAL_GPIO_DeInit(SUSPENSION_RR_GPIO_Port, SUSPENSION_RR_Pin);
 
     HAL_GPIO_DeInit(S_FRENO_GPIO_Port, S_FRENO_Pin);
 
