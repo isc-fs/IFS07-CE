@@ -1,0 +1,3 @@
+../Core/Src/LPF.c:10:6:LPF_EMA_Init	1
+../Core/Src/LPF.c:21:6:LPF_EMA_SetAlpha	3
+../Core/Src/LPF.c:37:7:LPF_EMA_Update	1

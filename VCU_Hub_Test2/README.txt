@@ -1,0 +1,1 @@
+En esta carpeta se encuentra el código de la VCU compatible con la conexión con el HUB.
