@@ -1,0 +1,2 @@
+../Core/Src/gps_parsing.c:15:6:process_gps_data	6
+../Core/Src/gps_parsing.c:42:6:parse_gpgga	1
