@@ -21,7 +21,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -41,7 +43,6 @@
 
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
-DMA_HandleTypeDef hdma_adc1;
 
 CAN_HandleTypeDef hcan1;
 
@@ -54,7 +55,6 @@ UART_HandleTypeDef huart2;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_DMA_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_CAN1_Init(void);
 static void MX_ADC1_Init(void);
@@ -73,10 +73,18 @@ uint8_t TxData[8];
 uint8_t RxData[8];
 uint16_t buffer_adc[2];
 
+uint32_t TxMailBox;
+
 int s1_aceleracion = 0; // Lectura del sensor 1 del pedal de aceleración
 int s2_aceleracion = 0; // Lectura del sensor 2 del pedal de aceleración
 
+char uart_msg[100];
+char TxBuffer[250];
+uint8_t error = 0;
 
+void print(char uart_buffer[]);
+void printValue(int value);
+void printHex(uint8_t value);
 uint8_t flag_start = 0;
 /* USER CODE END 0 */
 
@@ -109,13 +117,12 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_DMA_Init();
   MX_USART2_UART_Init();
   MX_CAN1_Init();
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
-  HAL_ADC_Start_DMA(&hadc1, (uint32_t*) buffer_adc, 2);
-
+  //HAL_ADC_Start_DMA(&hadc1, (uint32_t*) buffer_adc, 2);
+  HAL_ADC_Start(&hadc1);
   HAL_CAN_Start(&hcan1);
   if (HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK)
     {
@@ -137,15 +144,23 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  	TxHeader.DLC = 4;
+	  	// printValue(s1_aceleracion);
+		ADC_Select_CH1();
+		HAL_ADC_Start(&hadc1);
+		HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+		s1_aceleracion = HAL_ADC_GetValue(&hadc1);
+		printValue(s1_aceleracion);
+		HAL_ADC_Stop(&hadc1);
+		HAL_Delay(50);
+	  	TxHeader.DLC = 2;
 		TxHeader.IDE = CAN_ID_STD;
 		TxHeader.RTR = CAN_RTR_DATA;
 		TxHeader.StdId = 0x111;
 
-		TxData[0] = (s_aceleracion1 >> 8) & 0xFF;
-		TxData[1] = s_aceleracion1 & 0xFF; // S APPS 1
-		TxData[2] = (s_aceleracion2 >> 8) & 0xFF;
-		TxData[3] = s_aceleracion2 & 0xFF; // S APPS 2
+		TxData[0] = (s1_aceleracion >> 8) & 0xFF;
+		TxData[1] = s1_aceleracion & 0xFF; // S APPS 1
+		//TxData[2] = (s2_aceleracion >> 8) & 0xFF;
+		//TxData[3] = s2_aceleracion & 0xFF; // S APPS 2
 		if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailBox) == HAL_OK){
 			print("Valor de sensor de aceleración enviado\n\r");
 			HAL_Delay(2);
@@ -347,22 +362,6 @@ static void MX_USART2_UART_Init(void)
 }
 
 /**
-  * Enable DMA controller clock
-  */
-static void MX_DMA_Init(void)
-{
-
-  /* DMA controller clock enable */
-  __HAL_RCC_DMA1_CLK_ENABLE();
-
-  /* DMA interrupt init */
-  /* DMA1_Channel1_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
-
-}
-
-/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -419,10 +418,28 @@ void printHex(uint8_t value) {
 	HAL_UART_Transmit(&huart2, (uint8_t*) uart_msg, strlen(uart_msg),
 	HAL_MAX_DELAY);
 }
-
+/*
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
+	print("updating");
 	s1_aceleracion = buffer_adc[0];
 	s2_aceleracion = buffer_adc[1];
+}
+*/
+void ADC_Select_CH1 (void)
+{
+	ADC_ChannelConfTypeDef sConfig = {0};
+	  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+	  */
+	  sConfig.Channel = ADC_CHANNEL_1;
+	  sConfig.Rank = ADC_REGULAR_RANK_1;
+	  sConfig.SamplingTime = ADC_SAMPLETIME_2CYCLES_5;
+	  sConfig.SingleDiff = ADC_SINGLE_ENDED;
+	  sConfig.OffsetNumber = ADC_OFFSET_NONE;
+	  sConfig.Offset = 0;
+	  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+	  {
+	    Error_Handler();
+	  }
 }
 
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)

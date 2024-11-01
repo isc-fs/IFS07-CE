@@ -398,6 +398,7 @@ int main(void)
 
 	TxData_Inv[0] = 0x1; // Mandamos 1 al HUB para que empiece a comunicar datos
 	HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan3, &TxHeader_Inv, TxData_Inv);
+	print("HUB inicializado")
 
 
 /*
@@ -1354,7 +1355,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 			if (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &RxHeader_Hub, RxData_Hub) == HAL_OK){
 				if (RxHeader_Hub.Indentifier == 0x111){ // señal enviada por la HUB a la ECU con los datos de aceleración
 					s1_aceleracion = ((int)RxData_Hub[0] << 8) | RxData_Hub[1]; // juntamos los bytes 1 y 2 del envío del HUB
-					s2_aceleracion = ((int)RxData_Hub[2] << 8) | RxData_Hub[3]; // juntamos los bytes 3 y 4 del envío del HUB
+					//s2_aceleracion = ((int)RxData_Hub[2] << 8) | RxData_Hub[3]; // juntamos los bytes 3 y 4 del envío del HUB
 				}
 			}
 		}
