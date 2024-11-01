@@ -64,8 +64,8 @@ all: main-build
 main-build: VCU_Hub_Test2.elf secondary-outputs
 
 # Tool invocations
-VCU_Hub_Test2.elf VCU_Hub_Test2.map: $(OBJS) $(USER_OBJS) C:\Users\alpri\OneDrive\Documentos\ISC\IFS-07\IFS07-CE\VCU_Hub_Test2\STM32H733ZGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "VCU_Hub_Test2.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"C:\Users\alpri\OneDrive\Documentos\ISC\IFS-07\IFS07-CE\VCU_Hub_Test2\STM32H733ZGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="VCU_Hub_Test2.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+VCU_Hub_Test2.elf VCU_Hub_Test2.map: $(OBJS) $(USER_OBJS) C:\Users\alpri\OneDrive\Documentos\ISC\IFS-07\IFS07-CE\STM32\ workspace\VCU_Hub_Test2\STM32H733ZGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "VCU_Hub_Test2.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"C:\Users\alpri\OneDrive\Documentos\ISC\IFS-07\IFS07-CE\STM32 workspace\VCU_Hub_Test2\STM32H733ZGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="VCU_Hub_Test2.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
