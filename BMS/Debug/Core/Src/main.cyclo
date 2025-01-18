@@ -1,0 +1,14 @@
+../Core/Src/main.c:144:5:main	36
+../Core/Src/main.c:510:6:SystemClock_Config	3
+../Core/Src/main.c:550:13:MX_CAN_Init	2
+../Core/Src/main.c:601:13:MX_SPI1_Init	2
+../Core/Src/main.c:639:13:MX_SPI2_Init	2
+../Core/Src/main.c:677:13:MX_TIM1_Init	4
+../Core/Src/main.c:723:13:MX_GPIO_Init	1
+../Core/Src/main.c:769:6:HAL_CAN_RxFifo0MsgPendingCallback	5
+../Core/Src/main.c:800:6:GetModuleID	5
+../Core/Src/main.c:817:6:Delay_us	2
+../Core/Src/main.c:823:6:SPIWrite	1
+../Core/Src/main.c:827:6:SPIRead	1
+../Core/Src/main.c:838:6:readCellValues	2
+../Core/Src/main.c:852:6:Error_Handler	1
