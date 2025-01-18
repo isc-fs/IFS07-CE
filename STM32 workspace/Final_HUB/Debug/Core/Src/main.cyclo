@@ -1,0 +1,13 @@
+../Core/Src/main.c:97:5:main	3
+../Core/Src/main.c:186:6:SystemClock_Config	4
+../Core/Src/main.c:237:13:MX_ADC1_Init	3
+../Core/Src/main.c:296:13:MX_FDCAN1_Init	2
+../Core/Src/main.c:339:13:MX_USART2_UART_Init	5
+../Core/Src/main.c:387:13:MX_GPIO_Init	1
+../Core/Src/main.c:400:6:print	1
+../Core/Src/main.c:407:6:printValue	1
+../Core/Src/main.c:414:6:printHex	1
+../Core/Src/main.c:426:6:ADC_Select_CH1	2
+../Core/Src/main.c:443:6:ADC_Select_CH3	2
+../Core/Src/main.c:460:6:HAL_FDCAN_RxFifo0MsgPendingCallback	4
+../Core/Src/main.c:479:6:Error_Handler	1
