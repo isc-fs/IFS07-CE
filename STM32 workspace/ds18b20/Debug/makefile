@@ -1,6 +1,6 @@
 ################################################################################
 # Automatically-generated file. Do not edit!
-# Toolchain: GNU Tools for STM32 (11.3.rel1)
+# Toolchain: GNU Tools for STM32 (12.3.rel1)
 ################################################################################
 
 -include ../makefile.init
@@ -60,8 +60,8 @@ all: main-build
 main-build: ds18b20.elf secondary-outputs
 
 # Tool invocations
-ds18b20.elf ds18b20.map: $(OBJS) $(USER_OBJS) C:\Users\canib\OneDrive\Desktop\ds18b20\STM32L452RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "ds18b20.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\canib\OneDrive\Desktop\ds18b20\STM32L452RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ds18b20.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+ds18b20.elf ds18b20.map: $(OBJS) $(USER_OBJS) C:\Users\alpri\OneDrive\Documentos\ISC\IFS-07\IFS07-CE\STM32\ workspace\ds18b20\STM32L452RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "ds18b20.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\alpri\OneDrive\Documentos\ISC\IFS-07\IFS07-CE\STM32 workspace\ds18b20\STM32L452RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ds18b20.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

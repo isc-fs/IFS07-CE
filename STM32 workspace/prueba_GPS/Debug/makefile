@@ -60,8 +60,8 @@ all: main-build
 main-build: prueba_GPS.elf secondary-outputs
 
 # Tool invocations
-prueba_GPS.elf prueba_GPS.map: $(OBJS) $(USER_OBJS) C:\Users\avela\STM32CubeIDE\workspace_1.14.1\prueba_GPS\STM32G431RBTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "prueba_GPS.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\avela\STM32CubeIDE\workspace_1.14.1\prueba_GPS\STM32G431RBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="prueba_GPS.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+prueba_GPS.elf prueba_GPS.map: $(OBJS) $(USER_OBJS) C:\Users\alpri\OneDrive\Documentos\ISC\IFS-07\IFS07-CE\STM32\ workspace\prueba_GPS\STM32G431RBTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "prueba_GPS.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\alpri\OneDrive\Documentos\ISC\IFS-07\IFS07-CE\STM32 workspace\prueba_GPS\STM32G431RBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="prueba_GPS.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
