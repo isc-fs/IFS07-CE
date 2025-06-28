@@ -123,6 +123,7 @@ static void MX_TIM1_Init(void);
 static void MX_SPI2_Init(void);
 /* USER CODE BEGIN PFP */
 void GetModuleID(void);
+void PubModuleID(void);
 void Delay_us(uint16_t us);
 void SPIWrite(SPI_HandleTypeDef *hspi, uint8_t data);
 void SPIRead(SPI_HandleTypeDef *hspi, uint8_t cmd, uint8_t numRegisters,
@@ -181,6 +182,8 @@ int main(void)
 	}
 
 	GetModuleID();
+
+	PubModuleID();
 	TM_OneWire_Init(&OneWire1, GPIOA, DQ_Pin);
 
 	for (int n = 0; n < 24; n++)
@@ -812,6 +815,20 @@ void GetModuleID(void) {
 
 	moduleID = BASE_ID + rotarySwitch * 10;
 
+}
+
+void PubModuleID(void){
+	txHeader.DLC = 8;
+	txHeader.IDE = CAN_ID_STD;
+	txHeader.RTR = CAN_RTR_DATA;
+	txHeader.StdId = moduleID;
+
+	if (HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &TxMailBox)
+			!= HAL_OK) {
+		Error_Handler();
+	}
+
+	HAL_Delay(1);
 }
 
 void Delay_us(uint16_t us) {
