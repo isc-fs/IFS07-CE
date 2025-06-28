@@ -227,8 +227,8 @@ int main(void)
 	//Calculates the necesary can packets for sending all the temperatures
 	uint8_t n_packets_temps = sensor_count/8 + ((sensor_count%8)?1:0);
 
-	/*	if (sensor_count > 0)
-	 ds18b20_flag = 1;*/
+	if (sensor_count > 0)
+	 ds18b20_flag = 1;
 
   /* USER CODE END 2 */
 
@@ -388,9 +388,9 @@ int main(void)
 
 			//ds18b20_flag = TM_OneWire_Reset(&OneWire1);
 #if TEMPS
-			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, ds18b20_flag);
+			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, !ds18b20_flag);
 			HAL_Delay(500);
-			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, 0);
+			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, 0);
 			HAL_Delay(500);
 #endif
 			//Update status LEDs
@@ -723,8 +723,8 @@ static void MX_TIM1_Init(void)
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
-/* USER CODE BEGIN MX_GPIO_Init_1 */
-/* USER CODE END MX_GPIO_Init_1 */
+  /* USER CODE BEGIN MX_GPIO_Init_1 */
+  /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOD_CLK_ENABLE();
@@ -760,8 +760,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-/* USER CODE BEGIN MX_GPIO_Init_2 */
-/* USER CODE END MX_GPIO_Init_2 */
+  /* USER CODE BEGIN MX_GPIO_Init_2 */
+  /* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
