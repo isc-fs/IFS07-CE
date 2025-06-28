@@ -308,7 +308,7 @@ int main(void)
 		Delay_us(100);
 
 		//Read cell voltage registers HV+
-/*		HAL_GPIO_WritePin(LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN,
+		HAL_GPIO_WritePin(LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN,
 				GPIO_PIN_RESET);
 
 		SPIWrite(&hspi2, RDCV);
@@ -317,7 +317,7 @@ int main(void)
 
 		HAL_GPIO_WritePin(LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN,
 				GPIO_PIN_SET);
-		Delay_us(100);*/
+		Delay_us(100);
 
 #endif
 
