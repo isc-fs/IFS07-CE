@@ -47,11 +47,18 @@ enum {
 #define COMMS_TIMEOUT	16
 // Inputs from hex rotary pot for module ID selection
 
-#define MOD_ID_NUM8_PIN GPIO_PIN_7
+/*#define MOD_ID_NUM8_PIN GPIO_PIN_7
 #define MOD_ID_NUM4_PIN GPIO_PIN_8
 #define MOD_ID_NUM2_PIN GPIO_PIN_9
 #define MOD_ID_NUM1_PIN GPIO_PIN_10
-#define MOD_ID_NUM_PORT GPIOB
+#define MOD_ID_NUM_PORT GPIOB*/
+
+
+#define MOD_ID_NUM1  (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_10) == GPIO_PIN_RESET)
+#define MOD_ID_NUM2  (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_9)  == GPIO_PIN_RESET)
+#define MOD_ID_NUM4  (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_8)  == GPIO_PIN_RESET)
+#define MOD_ID_NUM8  (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_7)  == GPIO_PIN_RESET)
+
 
 #define cellRegisters 18
 
@@ -63,7 +70,7 @@ enum {
 #define LTC6802_CS2_GPIO_PORT GPIOB
 #define LTC6802_CS2_GPIO_PIN  GPIO_PIN_12
 
-#define TEMPS 1 //For testing the ds18b20 readings disabling cell measurement
+#define TEMPS 0		 //For testing the ds18b20 readings disabling cell measurement
 
 /* USER CODE END PD */
 
@@ -753,7 +760,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pins : PB10 PB7 PB8 PB9 */
   GPIO_InitStruct.Pin = GPIO_PIN_10|GPIO_PIN_7|GPIO_PIN_8|GPIO_PIN_9;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PB12 */
@@ -800,21 +807,16 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
 	}
 }
 
-void GetModuleID(void) {
+void GetModuleID(void)
+{
+    uint8_t rotarySwitch = 0;
 
-	int rotarySwitch = 0;
+    if (MOD_ID_NUM1) rotarySwitch += 1;
+    if (MOD_ID_NUM2) rotarySwitch += 2;
+    if (MOD_ID_NUM4) rotarySwitch += 4;
+    if (MOD_ID_NUM8) rotarySwitch += 8;
 
-	if (HAL_GPIO_ReadPin(MOD_ID_NUM_PORT, MOD_ID_NUM8_PIN) == GPIO_PIN_SET)
-		rotarySwitch += 8;
-	if (HAL_GPIO_ReadPin(MOD_ID_NUM_PORT, MOD_ID_NUM4_PIN) == GPIO_PIN_SET)
-		rotarySwitch += 4;
-	if (HAL_GPIO_ReadPin(MOD_ID_NUM_PORT, MOD_ID_NUM2_PIN) == GPIO_PIN_SET)
-		rotarySwitch += 2;
-	if (HAL_GPIO_ReadPin(MOD_ID_NUM_PORT, MOD_ID_NUM1_PIN) == GPIO_PIN_SET)
-		rotarySwitch += 1;
-
-	moduleID = BASE_ID + rotarySwitch * 10;
-
+    moduleID = BASE_ID + rotarySwitch * 10;  // Atomic enough for 8-bit on STM32F1
 }
 
 void PubModuleID(void){
