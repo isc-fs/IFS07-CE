@@ -4107,12 +4107,12 @@ void GetModuleID(void)
  8001ce0:	3308      	adds	r3, #8
  8001ce2:	71fb      	strb	r3, [r7, #7]
 
-    moduleID = BASE_ID + rotarySwitch * 10;  // Atomic enough for 8-bit on STM32F1
+    moduleID = BASE_ID + rotarySwitch * 30;  // Atomic enough for 8-bit on STM32F1
  8001ce4:	79fb      	ldrb	r3, [r7, #7]
  8001ce6:	b29b      	uxth	r3, r3
  8001ce8:	461a      	mov	r2, r3
- 8001cea:	0092      	lsls	r2, r2, #2
- 8001cec:	4413      	add	r3, r2
+ 8001cea:	0112      	lsls	r2, r2, #4
+ 8001cec:	1ad3      	subs	r3, r2, r3
  8001cee:	005b      	lsls	r3, r3, #1
  8001cf0:	b29b      	uxth	r3, r3
  8001cf2:	f503 7396 	add.w	r3, r3, #300	@ 0x12c

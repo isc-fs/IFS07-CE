@@ -47,12 +47,6 @@ enum {
 #define COMMS_TIMEOUT	16
 // Inputs from hex rotary pot for module ID selection
 
-/*#define MOD_ID_NUM8_PIN GPIO_PIN_7
-#define MOD_ID_NUM4_PIN GPIO_PIN_8
-#define MOD_ID_NUM2_PIN GPIO_PIN_9
-#define MOD_ID_NUM1_PIN GPIO_PIN_10
-#define MOD_ID_NUM_PORT GPIOB*/
-
 
 #define MOD_ID_NUM1  (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_10) == GPIO_PIN_RESET)
 #define MOD_ID_NUM2  (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_9)  == GPIO_PIN_RESET)
@@ -816,7 +810,7 @@ void GetModuleID(void)
     if (MOD_ID_NUM4) rotarySwitch += 4;
     if (MOD_ID_NUM8) rotarySwitch += 8;
 
-    moduleID = BASE_ID + rotarySwitch * 10;  // Atomic enough for 8-bit on STM32F1
+    moduleID = BASE_ID + rotarySwitch * 30;  // Atomic enough for 8-bit on STM32F1
 }
 
 void PubModuleID(void){
