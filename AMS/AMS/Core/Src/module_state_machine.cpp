@@ -17,34 +17,25 @@
 // INITIALIZE VARIABLES
 BMS_MOD BMS[] = {
 //New BMS - one per module with voltage and temperature readings
-		BMS_MOD(BMS_ID + 00, BMS_MAXV, BMS_MINV, BMS_MAXT, 10, BMS_SHUNT), // 3+3+3+3
-		BMS_MOD(BMS_ID + 30, BMS_MAXV, BMS_MINV, BMS_MAXT, 9, BMS_SHUNT, 50), // 3+5
-		BMS_MOD(BMS_ID + 60, BMS_MAXV, BMS_MINV, BMS_MAXT, 10, BMS_SHUNT, 100), // 5+5
-		BMS_MOD(BMS_ID + 90, BMS_MAXV, BMS_MINV, BMS_MAXT, 9, BMS_SHUNT, 150), // 5+5
-		BMS_MOD(BMS_ID + 120, BMS_MAXV, BMS_MINV, BMS_MAXT, 10, BMS_SHUNT, 200), // 5+5
+		BMS_MOD(BMS_ID + 00, BMS_MAXV, BMS_MINV, BMS_MAXT, 19, BMS_SHUNT), // 3+3+3+3
+		BMS_MOD(BMS_ID + 30, BMS_MAXV, BMS_MINV, BMS_MAXT, 19, BMS_SHUNT, 50), // 3+5
+		BMS_MOD(BMS_ID + 60, BMS_MAXV, BMS_MINV, BMS_MAXT, 19, BMS_SHUNT, 100), // 5+5
+		BMS_MOD(BMS_ID + 90, BMS_MAXV, BMS_MINV, BMS_MAXT, 19, BMS_SHUNT, 150), // 5+5
+		BMS_MOD(BMS_ID + 120, BMS_MAXV, BMS_MINV, BMS_MAXT, 19, BMS_SHUNT, 200), // 5+5
 		};
 
-int BMS_N = 10;
+int BMS_N = 5;
 int MIN_V = 4200;
+int MAX_T = 0;
 uint8_t message_MINV[2] = { 0, 0 }; //Here I'll get the minimun voltages for sending them for telemetry
 int time_sending_minV = 0;      //For checking the interval I send the messages
 uint8_t message_MAXT[2] = { 0, 0 };
 int time_sending_maxT = 0;
 
-Temperatures_MOD Tempt[] = {
-//Inicializo los modulos de temperatura. Cada modulo tiene un ID pero para pedir temperaturas uso el id 0x500
-		Temperatures_MOD(0x510, T_MAX, 55),  // MODULE 1
-		Temperatures_MOD(0x520, T_MAX, 155), // MODULE 2
-		Temperatures_MOD(0x530, T_MAX, 255), // MODULE 3
-		Temperatures_MOD(0x540, T_MAX, 355), // MODULE 4
-		Temperatures_MOD(0x550, T_MAX, 455), // MODULE 5
-
-		};
-int Temp_N = 5;
 
 CPU_MOD CPU(CPU_ID_send, CPU_ID_recv, 500); //Same with CPU, rest of vehicle
 
-int flag_charger = 0; //For knowing wether I am charging or in the car
+int flag_charger = 0; //For knowing whether I am charging or in the car
 
 // SEV_MOD SEVCON(SEV_ID,SEV_ID+1,SEV_ID+2,SEV_ID+3,SEV_ID+4); //Do not worry about anything of these
 // CHARGER_MOD CHARGER(CHARGER_ID_SEND, CHARGER_ID_RECV, CHARGER_MAXV, CHARGER_MAXI, CHARGER_MINI);
@@ -90,16 +81,25 @@ void select_state() {
 
 	CPU.voltage_acum = 0; // For precharge
 
+
 	MIN_V = 4200; /// I reset the number each cycle cause if the voltages goes up again I wanna has it risen again on telemetry
+	MAX_T = 0;
 	for (int i = 0; i < BMS_N; i++) {
 		BMS[i].voltage_acum = 0;                  // For precharge
-		if (BMS[i].query(time, buffer) != BMS_OK) //I ask the BMS about voltages and cheking their states
+		if (BMS[i].query_voltage(time, buffer) != BMS_OK) //I ask the BMS about voltages and cheking their states
 		{
 			state = error;
 		}
 		CPU.voltage_acum += BMS[i].voltage_acum; // For precharge
 		if (BMS[i].MIN_V < MIN_V)
 			MIN_V = BMS[i].MIN_V; //Checking the minimun voltage of cell in the whole battery
+
+		if (BMS[i].query_temperature(time, buffer) != Temperatures_OK){
+			state = error;
+		}
+
+		if (BMS[i].MAX_T > MAX_T)
+			MAX_T = BMS[i].MAX_T;
 	}
 
 	if (time_s > time_sending_minV + 500) {
@@ -115,28 +115,7 @@ void select_state() {
 		BMS[i].BALANCING_V = MIN_V; //Here I say I wanna balance all the cells in the battery to the minimun
 
 	}
-	if (time > 1000 && time < 2000)
-		MIN_V = 4200; //Do not really worry about this, I dunno remember if this was really necesary
-	int MAX_T = 0;
-	for (int i = 0; i < Temp_N; i++) {
-		if (Tempt[i].query(time, buffer) != Temperatures_OK)
-			state = error; //Asking how temperatures are
-		if (Tempt[i].MAX_T > MAX_T)
-			MAX_T = Tempt[i].MAX_T;
-	}
 
-	if (time_s > time_sending_maxT + 1000) {
-		message_MAXT[1] = MAX_T & 0xFF;
-		message_MAXT[0] = 0;
-		if (Tempt[0].flag_charger != 1) {
-			if (module_send_message_CAN1(Temp_ID, message_MAXT, 2) != HAL_OK){
-				print((char*) "Error al enviar temperatura maxima"); //Sending the message through telemetry each 1000 ms
-
-			}
-		}
-		time_sending_maxT = time_s;
-
-	}
 
 	flag_cpu = CPU.query(time, buffer); //Asking the rest of the car how is it
 
@@ -246,7 +225,6 @@ void select_state() {
 void parse_state(CANMsg data) {
 	uint32_t time = HAL_GetTick();
 	bool flag_bms = false;
-	bool flag_temperatures = false;
 
 	for (int i = 0; i < BMS_N; i++) {
 		flag_bms = BMS[i].parse(data.id, &data.buf[0], time); //Checking if the message received is for  BMS
@@ -254,13 +232,7 @@ void parse_state(CANMsg data) {
 			i = BMS_N;
 	}
 
-	for (int i = 0; i < Temp_N; i++) {
-		flag_temperatures = Tempt[i].parse(data.id, &data.buf[0], time); //Checking if the message received is for temperatures
-
-		if (flag_temperatures)
-			i = Temp_N;
-	}
-	if (!flag_bms && !flag_temperatures) {
+	if (!flag_bms) {
 		if (CPU.parse(data.id, &data.buf[0], time))
 			;                       //Cheking if message is for CPU
 		if (data.id == 419385575) //If message from this direction received, it is because the charger is connected and the accu is for charging
@@ -268,9 +240,7 @@ void parse_state(CANMsg data) {
 			for (int i = 0; i < BMS_N; i++) {
 				BMS[i].flag_charger = 1;
 			}
-			for (int i = 0; i < Temp_N; i++) {
-				Tempt[i].flag_charger = 1;
-			}
+
 			current.flag_charger = 1;
 			flag_charger = 1;
 			// Serial.print("Charger: ");
