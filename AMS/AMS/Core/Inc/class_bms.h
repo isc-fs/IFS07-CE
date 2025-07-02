@@ -55,7 +55,8 @@ public:
 
 	BMS_MOD(uint32_t _ID, int _MAXV, int _MINV, int _MAXT, uint8_t _NUMCELLS,
 			unsigned int _SHUNT, int _LAG = 0);
-	void info(char *buffer);
+	void voltage_info(char *buffer);
+	void temperature_info(char *buffer);
 	bool parse(uint32_t id, uint8_t *buf, uint32_t t);
 	int return_error();
 	int query_voltage(uint32_t time, char *buffer);
