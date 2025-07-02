@@ -86,17 +86,18 @@ void select_state() {
 	MAX_T = 0;
 	for (int i = 0; i < BMS_N; i++) {
 		BMS[i].voltage_acum = 0;                  // For precharge
-		if (BMS[i].query_voltage(time, buffer) != BMS_OK) //I ask the BMS about voltages and cheking their states
-		{
-			state = error;
-		}
+		//if (BMS[i].query_voltage(time, buffer) != BMS_OK) //I ask the BMS about voltages and cheking their states
+		//{
+		//	state = error;
+		//}
 		CPU.voltage_acum += BMS[i].voltage_acum; // For precharge
 		if (BMS[i].MIN_V < MIN_V)
 			MIN_V = BMS[i].MIN_V; //Checking the minimun voltage of cell in the whole battery
 
-		if (BMS[i].query_temperature(time, buffer) != Temperatures_OK){
-			state = error;
-		}
+		//if (BMS[i].query_temperature(time, buffer) != Temperatures_OK)
+		//{
+		//	state = error;
+		//}
 
 		if (BMS[i].MAX_T > MAX_T)
 			MAX_T = BMS[i].MAX_T;

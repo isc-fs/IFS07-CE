@@ -485,7 +485,7 @@ static void MX_FDCAN2_Init(void)
   hfdcan2.Init.ProtocolException = DISABLE;
   hfdcan2.Init.NominalPrescaler = 6;
   hfdcan2.Init.NominalSyncJumpWidth = 1;
-  hfdcan2.Init.NominalTimeSeg1 = 10;
+  hfdcan2.Init.NominalTimeSeg1 = 2;
   hfdcan2.Init.NominalTimeSeg2 = 5;
   hfdcan2.Init.DataPrescaler = 1;
   hfdcan2.Init.DataSyncJumpWidth = 1;
@@ -673,8 +673,10 @@ HAL_StatusTypeDef module_send_message_NoExtId_CAN1(uint32_t id, uint8_t* data, u
 
 HAL_StatusTypeDef module_send_message_CAN2(uint32_t id, uint8_t* data, uint8_t length) {
 	TxHeader_bms.Identifier = id;
-	TxHeader_bms.IdType = FDCAN_EXTENDED_ID;
+	TxHeader_bms.IdType = FDCAN_STANDARD_ID;
 	TxHeader_bms.DataLength = length;
+
+	printValue(TxHeader_bms.Identifier);
 
 	HAL_StatusTypeDef status = HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, &TxHeader_bms, data);
 

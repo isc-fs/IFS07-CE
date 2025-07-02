@@ -37,6 +37,8 @@ private:
 	uint32_t TIME_LIM_RECV = 3000;   // Limit time for communication in ms
 	uint32_t time_lim_plotted = TIME_LIM_PLOT; // Dont plot in the initil time because the value is null
 	uint32_t time_lim_sended = 0;      // When has been last sended
+	uint32_t time_lim_sended_temp = 0;      // When has been last sended
+	uint32_t time_lim_plotted_temp = TIME_LIM_PLOT; // Dont plot in the initil time because the value is null
 	uint32_t time_lim_received = TIME_LIM_RECV; // When have been last received // Initialized to 1000 to wait one minute to receive the data
 	uint8_t message_balancing[2] = { 0, 0 }; // Voltage in mV
 	uint8_t message_temperatures[2] = { 0, 0 };

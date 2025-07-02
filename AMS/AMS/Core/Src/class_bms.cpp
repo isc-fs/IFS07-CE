@@ -31,6 +31,8 @@ BMS_MOD::BMS_MOD(uint32_t _ID, int _MAXV, int _MINV, int _MAXT,
 	NUM_CELLS = _NUMCELLS;
 	time_lim_plotted += _LAG;
 	time_lim_sended += _LAG;
+	time_lim_sended_temp += _LAG;
+	time_lim_plotted_temp += _LAG;
 	time_lim_received += _LAG;
 }
 
@@ -204,17 +206,17 @@ int BMS_MOD::return_error() {
  *********************************************************************************************************/
 int BMS_MOD::query_voltage(uint32_t time, char *buffer) {
 	//INT8U message_balancing[2] = {0,0}; // Voltage in mV
-// Function for performing a correct behavior
+	// Function for performing a correct behavior
 	if (time > time_lim_sended) { // HERE I HAVE TO SEND THE REQUEST MESSAGE FOR THE BMS
 		time_lim_sended += TIME_LIM_SEND;
 
 		// Two messages (one per LTC in the BMS) -> to evaluate if its better to group everything into one message
-		if (module_send_message_CAN2(CANID, message_balancing, 2) != HAL_OK) {
+
+		if (module_send_message_CAN2(CANID, message_balancing, 2) != HAL_OK) {;
 			//error = BMS_ERROR_COMMUNICATION; // If the message is not sent then, error
 		}
 
-		if (module_send_message_CAN2(CANID + 10, message_balancing, 2)
-				!= HAL_OK) {
+		if (module_send_message_CAN2(CANID + 10, message_balancing, 2) != HAL_OK) {
 			//error = BMS_ERROR_COMMUNICATION; // If the message is not sent then, error
 		}
 	}
@@ -223,7 +225,7 @@ int BMS_MOD::query_voltage(uint32_t time, char *buffer) {
 	}
 	if (TIME_LIM_PLOT > 0 && time > time_lim_plotted) {
 		time_lim_plotted += TIME_LIM_PLOT;
-		voltage_info(buffer);
+		//voltage_info(buffer);
 	}
 
 	for (int i = 0; i < NUM_CELLS; i++) {
@@ -240,32 +242,30 @@ int BMS_MOD::query_voltage(uint32_t time, char *buffer) {
  *********************************************************************************************************/
 
 int BMS_MOD::query_temperature(uint32_t time, char *buffer) {
-// Function for performing a correct behavior
-if (time > time_lim_sended) { // HERE I HAVE TO SEND THE REQUEST MESSAGE FOR THE TEMPERATURES
-	time_lim_sended += TIME_LIM_SEND;
-
-	if (module_send_message_CAN2(CANID + 20, message_temperatures, 2)
-			!= HAL_OK) {
-		error = BMS_ERROR_TEMP; // If the message is not sended then, error
-	} else {
-		/*       Serial.print("Ennvado solicitud a: ");
-		 Serial.println(MODULEID,HEX); */
-	}
-
-	for (int i = 0; i < 38; i++) {
-		if (cellTemperature[i] > 55) {
-			error = 2;
+	// Function for performing a correct behavior
+	if (time > time_lim_sended_temp) { // HERE I HAVE TO SEND THE REQUEST MESSAGE FOR THE TEMPERATURES
+		time_lim_sended_temp += TIME_LIM_SEND;
+		if (module_send_message_CAN2(CANID + 20, message_temperatures, 2)!= HAL_OK) {
+			error = BMS_ERROR_TEMP; // If the message is not sended then, error
+		} else {
+			/*       Serial.print("Ennvado solicitud a: ");
+			 Serial.println(MODULEID,HEX); */
 		}
-	}
 
-	// time_lim_sended += TIME_LIM_SEND; //Si actualizas dos veces, el mensaje se envía en la mitad del periodo
-}
-if (time > time_lim_received) {
-	//error = Temperatures_ERROR_COMMUNICATION;
-}
-if (TIME_LIM_PLOT > 0 && time > time_lim_plotted) {
-	time_lim_plotted += TIME_LIM_PLOT;
-	temperature_info(buffer);
+		for (int i = 0; i < 38; i++) {
+			if (cellTemperature[i] > 55) {
+				error = 2;
+			}
+		}
+
+		// time_lim_sended += TIME_LIM_SEND; //Si actualizas dos veces, el mensaje se envía en la mitad del periodo
+	}
+	if (time > time_lim_received) {
+		//error = Temperatures_ERROR_COMMUNICATION;
+	}
+	if (TIME_LIM_PLOT > 0 && time > time_lim_plotted_temp) {
+		time_lim_plotted_temp += TIME_LIM_PLOT;
+		//temperature_info(buffer);
 }
 
 /*     if(time > time_lim_sended)

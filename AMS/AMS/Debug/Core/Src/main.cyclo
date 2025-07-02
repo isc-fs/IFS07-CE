@@ -11,9 +11,9 @@
 ../Core/Src/main.cpp:653:19:HAL_StatusTypeDef module_send_message_CAN1(uint32_t, uint8_t*, uint8_t)	1
 ../Core/Src/main.cpp:664:19:HAL_StatusTypeDef module_send_message_NoExtId_CAN1(uint32_t, uint8_t*, uint8_t)	1
 ../Core/Src/main.cpp:674:19:HAL_StatusTypeDef module_send_message_CAN2(uint32_t, uint8_t*, uint8_t)	1
-../Core/Src/main.cpp:684:6:void print(char*)	1
-../Core/Src/main.cpp:689:6:void printnl(char*)	1
-../Core/Src/main.cpp:694:6:void printValue(int)	1
-../Core/Src/main.cpp:699:23:HAL_UART_StateTypeDef getUARTState()	1
-../Core/Src/main.cpp:703:7:float readAnalogValue()	1
-../Core/Src/main.cpp:718:6:void Error_Handler()	1
+../Core/Src/main.cpp:686:6:void print(char*)	1
+../Core/Src/main.cpp:691:6:void printnl(char*)	1
+../Core/Src/main.cpp:696:6:void printValue(int)	1
+../Core/Src/main.cpp:701:23:HAL_UART_StateTypeDef getUARTState()	1
+../Core/Src/main.cpp:705:7:float readAnalogValue()	1
+../Core/Src/main.cpp:720:6:void Error_Handler()	1
