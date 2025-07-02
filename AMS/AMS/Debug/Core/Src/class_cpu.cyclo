@@ -1,0 +1,6 @@
+../Core/Src/class_cpu.cpp:22:1:CPU_MOD::CPU_MOD(uint32_t, uint32_t, int)	1
+../Core/Src/class_cpu.cpp:35:6:void CPU_MOD::info(char*)	2
+../Core/Src/class_cpu.cpp:64:6:bool CPU_MOD::parse(uint32_t, uint8_t*, uint32_t)	4
+../Core/Src/class_cpu.cpp:86:5:int CPU_MOD::return_error()	1
+../Core/Src/class_cpu.cpp:94:5:int CPU_MOD::query(uint32_t, char*)	5
+../Core/Src/class_cpu.cpp:109:6:void CPU_MOD::updateState(int)	1
