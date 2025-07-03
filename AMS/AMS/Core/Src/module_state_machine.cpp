@@ -15,16 +15,18 @@
 #include "module_state_machine.h"
 
 // INITIALIZE VARIABLES
-BMS_MOD BMS[] = {
+/*BMS_MOD BMS[] = {
 //New BMS - one per module with voltage and temperature readings
 		BMS_MOD(BMS_ID + 00, BMS_MAXV, BMS_MINV, BMS_MAXT, 19, BMS_SHUNT), // 3+3+3+3
 		BMS_MOD(BMS_ID + 30, BMS_MAXV, BMS_MINV, BMS_MAXT, 19, BMS_SHUNT, 50), // 3+5
 		BMS_MOD(BMS_ID + 60, BMS_MAXV, BMS_MINV, BMS_MAXT, 19, BMS_SHUNT, 100), // 5+5
 		BMS_MOD(BMS_ID + 90, BMS_MAXV, BMS_MINV, BMS_MAXT, 19, BMS_SHUNT, 150), // 5+5
 		BMS_MOD(BMS_ID + 120, BMS_MAXV, BMS_MINV, BMS_MAXT, 19, BMS_SHUNT, 200), // 5+5
-		};
+		};*/
 
-int BMS_N = 5;
+BMS_MOD BMS[] = {BMS_MOD(BMS_ID+60, BMS_MAXV, BMS_MINV,BMS_MAXT,19,BMS_SHUNT,100)};
+
+int BMS_N = 1;
 int MIN_V = 4200;
 int MAX_T = 0;
 uint8_t message_MINV[2] = { 0, 0 }; //Here I'll get the minimun voltages for sending them for telemetry

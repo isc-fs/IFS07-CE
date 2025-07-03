@@ -4,4 +4,4 @@
 ../Core/Src/class_bms.cpp:113:6:bool BMS_MOD::parse(uint32_t, uint8_t*, uint32_t)	31
 ../Core/Src/class_bms.cpp:197:5:int BMS_MOD::return_error()	1
 ../Core/Src/class_bms.cpp:205:5:int BMS_MOD::query_voltage(uint32_t, char*)	6
-../Core/Src/class_bms.cpp:242:5:int BMS_MOD::query_temperature(uint32_t, char*)	7
+../Core/Src/class_bms.cpp:243:5:int BMS_MOD::query_temperature(uint32_t, char*)	7

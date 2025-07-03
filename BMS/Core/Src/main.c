@@ -64,7 +64,7 @@ enum {
 #define LTC6802_CS2_GPIO_PORT GPIOB
 #define LTC6802_CS2_GPIO_PIN  GPIO_PIN_12
 
-#define TEMPS 0	 //For testing the ds18b20 readings disabling cell measurement
+#define TEMPS 0 //For testing the ds18b20 readings disabling cell measurement
 
 /* USER CODE END PD */
 
@@ -241,8 +241,8 @@ int main(void)
 	while (1) {
 
 		// Split up the 32-bit shuntBits variable into two 12-bit chunks for each LTC
-		uint32_t shuntBitsL = shuntBits & 0x0FFF; // Lower 12 bits
-		uint32_t shuntBitsH = shuntBits >> 12; // Upper 12 bits
+		uint32_t shuntBitsL = 0;//shuntBits & 0x0FFF; // Lower 12 bits
+		uint32_t shuntBitsH = 0;//shuntBits >> 12; // Upper 12 bits
 #if !TEMPS
 		//Configure LTC6802 1 (HV-)
 		HAL_GPIO_WritePin(LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN,
@@ -282,6 +282,7 @@ int main(void)
 		HAL_GPIO_WritePin(LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN,
 				GPIO_PIN_SET);
 
+
 		Delay_us(100);
 
 		//Start voltage sampling
@@ -308,6 +309,7 @@ int main(void)
 
 		Delay_us(100);
 
+
 		//Read cell voltage registers HV+
 		HAL_GPIO_WritePin(LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN,
 				GPIO_PIN_RESET);
@@ -319,6 +321,8 @@ int main(void)
 		HAL_GPIO_WritePin(LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN,
 				GPIO_PIN_SET);
 		Delay_us(100);
+
+
 
 #endif
 
@@ -360,7 +364,7 @@ int main(void)
 
 			slowCounter++;
 
-			if (slowCounter >= 2)
+			if (slowCounter >= 4)
 				slowCounter = 0;
 
 			char notAllZeroVolts = false;
@@ -371,10 +375,13 @@ int main(void)
 					average += voltages[n][c] / 2;
 				voltage[n] = average >> 2;
 
+				int correction = LOW_LTC_CORRECTION;
+				if (n >= 12) correction = HIGH_LTC_CORRECTION;
+
+
 				if (voltage[n] > 0) {
-					voltage[n] += CORRECTION; // With high inpedance input filters, they're reading about 8mV too low
-					if (n == 0)
-						voltage[n] -= CORRECTION / 3; // First cell has less drop due to single 3.3Kohm resistor in play
+					voltage[n] += correction; // With high inpedance input filters, they're reading about 8mV too low
+					if (n==0 || n==12) voltage[n] -= correction/2; // First cell has less drop due to single 3.3Kohm resistor in play
 				}
 
 				if (voltage[n] > 5000)

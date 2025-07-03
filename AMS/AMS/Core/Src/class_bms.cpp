@@ -234,6 +234,7 @@ int BMS_MOD::query_voltage(uint32_t time, char *buffer) {
 
 
 
+
 /*********************************************************************************************************
  ** Function name:           query_temperature
  ** Descriptions:            Function to check if i need to send a message new message and the received messages interval are within the limits
