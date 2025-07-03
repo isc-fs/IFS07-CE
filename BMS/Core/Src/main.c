@@ -66,6 +66,9 @@ enum {
 
 #define TEMPS 0	 //For testing the ds18b20 readings disabling cell measurement
 
+#define READ_HV_plus 1 //For reading voltages from HV+ LTC side
+#define READ_HV_minus 1 //For reading voltages from HV- LTC side
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -294,7 +297,7 @@ int main(void)
 				GPIO_PIN_SET);
 
 		HAL_Delay(20);
-
+#if READ_HV_minus
 		//Read cell voltage registers HV-
 		HAL_GPIO_WritePin(LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN,
 				GPIO_PIN_RESET);
@@ -307,7 +310,8 @@ int main(void)
 				GPIO_PIN_SET);
 
 		Delay_us(100);
-
+#endif
+#if READ_HV_plus
 		//Read cell voltage registers HV+
 		HAL_GPIO_WritePin(LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN,
 				GPIO_PIN_RESET);
@@ -319,7 +323,7 @@ int main(void)
 		HAL_GPIO_WritePin(LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN,
 				GPIO_PIN_SET);
 		Delay_us(100);
-
+#endif 
 #endif
 
 		//Start temperature sampling on all devices
