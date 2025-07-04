@@ -22,6 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "ds18b20.h"
+#include <string.h>
 
 /* USER CODE END Includes */
 
@@ -45,6 +46,11 @@ enum {
 #define false 0
 
 #define COMMS_TIMEOUT	16
+
+uint8_t errorLTC1 = 0;
+uint8_t errorLTC2 = 0;
+
+
 // Inputs from hex rotary pot for module ID selection
 
 
@@ -82,6 +88,8 @@ SPI_HandleTypeDef hspi2;
 TIM_HandleTypeDef htim1;
 
 /* USER CODE BEGIN PV */
+
+
 
 // LTC6802 Command codes
 const uint8_t WRCFG = 0x01;
@@ -131,6 +139,7 @@ void SPIRead(SPI_HandleTypeDef *hspi, uint8_t cmd, uint8_t numRegisters,
 		uint8_t *const buff);
 void readCellValues(SPI_HandleTypeDef *hspi, uint8_t cmd, uint8_t numRegisters,
 		uint8_t *const buff);
+uint8_t calculatePEC(uint8_t *data, uint8_t len);
 
 /* USER CODE END PFP */
 
@@ -856,11 +865,37 @@ void SPIRead(SPI_HandleTypeDef *hspi, uint8_t cmd, uint8_t numRegisters,
 
 void readCellValues(SPI_HandleTypeDef *hspi, uint8_t cmd, uint8_t numRegisters,
 		uint8_t *const buff) {
+	uint8_t rawBuff[19];  // 18 data bytes + 1 PEC
 	do {
-		SPIRead(hspi, cmd, numRegisters, buff);
-	} while (buff[0] == 0xff);
+		SPIRead(hspi, cmd, 19, rawBuff);
+	} while (rawBuff[0] == 0xFF);
 
+	uint8_t pecCalculated = calculatePEC(rawBuff, 18);
+	uint8_t pecReceived = rawBuff[18];
+
+	if (pecCalculated != pecReceived) {
+		Error_Handler();
+	}
+
+	// Copy 18 data bytes to original buffer
+	memcpy(buff, rawBuff, 18);
 }
+
+uint8_t calculatePEC(uint8_t *data, uint8_t len) {
+	uint8_t crc = 0x41;
+	for (uint8_t i = 0; i < len; i++) {
+		crc ^= data[i];
+		for (uint8_t j = 0; j < 8; j++) {
+			if (crc & 0x80)
+				crc = (crc << 1) ^ 0x07;
+			else
+				crc <<= 1;
+		}
+	}
+	return crc;
+}
+
+
 
 /* USER CODE END 4 */
 
