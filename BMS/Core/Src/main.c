@@ -70,7 +70,7 @@ uint8_t errorLTC2 = 0;
 #define LTC6802_CS2_GPIO_PORT GPIOB
 #define LTC6802_CS2_GPIO_PIN  GPIO_PIN_12
 
-#define TEMPS 0 //For testing the ds18b20 readings disabling cell measurement
+#define TEMPS 1 //For testing the ds18b20 readings disabling cell measurement
 
 /* USER CODE END PD */
 
@@ -260,7 +260,7 @@ int main(void)
 		SPIWrite(&hspi1, 0b00000001);
 		SPIWrite(&hspi1, ((unsigned short) (shuntBitsL & 0x00FF)));
 		SPIWrite(&hspi1, ((unsigned short) (shuntBitsL >> 8)));
-		SPIWrite(&hspi1, 0b00000000);
+		SPIWrite(&hspi1, 0b11100000); //LTC6802-2 in HV- measures 9 cells, so cells from 10 to 12 are masked
 		SPIWrite(&hspi1, 0b00000000);
 		SPIWrite(&hspi1, 0b00000000);
 		HAL_GPIO_WritePin(LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN,
@@ -285,7 +285,7 @@ int main(void)
 		SPIWrite(&hspi2, 0b00000001);
 		SPIWrite(&hspi2, ((unsigned short) (shuntBitsH & 0x00FF)));
 		SPIWrite(&hspi2, ((unsigned short) (shuntBitsH >> 8)));
-		SPIWrite(&hspi2, 0b00000000);
+		SPIWrite(&hspi2, 0b11000000); //LTC6802-2 in HV- measures 10 cells, so cells from 11 to 12 are masked
 		SPIWrite(&hspi2, 0b00000000);
 		SPIWrite(&hspi2, 0b00000000);
 		HAL_GPIO_WritePin(LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN,
@@ -882,18 +882,19 @@ void readCellValues(SPI_HandleTypeDef *hspi, uint8_t cmd, uint8_t numRegisters,
 }
 
 uint8_t calculatePEC(uint8_t *data, uint8_t len) {
-	uint8_t crc = 0x41;
-	for (uint8_t i = 0; i < len; i++) {
-		crc ^= data[i];
-		for (uint8_t j = 0; j < 8; j++) {
-			if (crc & 0x80)
-				crc = (crc << 1) ^ 0x07;
-			else
-				crc <<= 1;
-		}
-	}
-	return crc;
+    uint8_t crc = 0x00;
+    for (uint8_t i = 0; i < len; i++) {
+        crc ^= data[i];
+        for (uint8_t j = 0; j < 8; j++) {
+            if (crc & 0x80)
+                crc = (crc << 1) ^ 0x07;
+            else
+                crc <<= 1;
+        }
+    }
+    return crc;
 }
+
 
 
 
