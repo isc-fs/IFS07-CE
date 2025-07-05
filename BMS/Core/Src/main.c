@@ -878,16 +878,22 @@ void SPIWrite(SPI_HandleTypeDef *hspi, uint8_t cmd) {
 	HAL_SPI_Transmit(hspi, (uint8_t*) &cmd, 1, HAL_MAX_DELAY);
 }
 
-void SPIRead(SPI_HandleTypeDef *hspi, uint8_t cmd, uint8_t numRegisters,
-		uint8_t *const buff) {
+void SPIRead(SPI_HandleTypeDef *hspi, uint8_t cmd, uint8_t numRegisters, uint8_t *const buff) {
+    uint8_t tx[1 + numRegisters];
+    uint8_t rx[1 + numRegisters];
 
-// Send command to read data
-	HAL_SPI_Transmit(hspi, &cmd, 1, HAL_MAX_DELAY);
+    tx[0] = cmd;
+    for (int i = 1; i < 1 + numRegisters; i++) {
+        tx[i] = 0x00; // dummy bytes
+    }
 
-// Read the data registers
-	HAL_SPI_Receive(hspi, buff, numRegisters, HAL_MAX_DELAY);
+    HAL_SPI_TransmitReceive(hspi, tx, rx, 1 + numRegisters, HAL_MAX_DELAY);
 
+    for (int i = 0; i < numRegisters; i++) {
+        buff[i] = rx[i + 1];
+    }
 }
+
 
 void readCellValues(SPI_HandleTypeDef *hspi, uint8_t cmd, uint8_t numRegisters,
 		uint8_t *const buff) {
