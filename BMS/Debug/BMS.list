@@ -27,25 +27,25 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   ALLOC
  11 .ARM.attributes 00000029  00000000  00000000  0000700c  2**0
                   CONTENTS, READONLY
- 12 .debug_info   0000c63d  00000000  00000000  00007035  2**0
+ 12 .debug_info   0000c6bf  00000000  00000000  00007035  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 13 .debug_abbrev 000020ea  00000000  00000000  00013672  2**0
+ 13 .debug_abbrev 00002107  00000000  00000000  000136f4  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 14 .debug_aranges 00000dd8  00000000  00000000  00015760  2**3
+ 14 .debug_aranges 00000de0  00000000  00000000  00015800  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 15 .debug_rnglists 00000aaf  00000000  00000000  00016538  2**0
+ 15 .debug_rnglists 00000ab5  00000000  00000000  000165e0  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 16 .debug_macro  00017e85  00000000  00000000  00016fe7  2**0
+ 16 .debug_macro  00017eb0  00000000  00000000  00017095  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 17 .debug_line   0000e9bc  00000000  00000000  0002ee6c  2**0
+ 17 .debug_line   0000ea0f  00000000  00000000  0002ef45  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 18 .debug_str    0008c55a  00000000  00000000  0003d828  2**0
+ 18 .debug_str    0008c5af  00000000  00000000  0003d954  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .comment      00000043  00000000  00000000  000c9d82  2**0
+ 19 .comment      00000043  00000000  00000000  000c9f03  2**0
                   CONTENTS, READONLY
- 20 .debug_frame  00003ad8  00000000  00000000  000c9dc8  2**2
+ 20 .debug_frame  00003afc  00000000  00000000  000c9f48  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 21 .debug_line_str 00000059  00000000  00000000  000cd8a0  2**0
+ 21 .debug_line_str 00000059  00000000  00000000  000cda44  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -2226,11 +2226,10 @@ int main(void) {
  8000fa8:	4619      	mov	r1, r3
  8000faa:	4862      	ldr	r0, [pc, #392]	@ (8001134 <main+0x370>)
  8000fac:	f001 f97a 	bl	80022a4 <SPIWrite>
-		SPIWrite(&hspi1, 0b00000000);
- 8000fb0:	2100      	movs	r1, #0
+		SPIWrite(&hspi1, 0b11100000); //LTC6802-2 in HV- measures 9 cells, so cells from 10 to 12 are masked
+ 8000fb0:	21e0      	movs	r1, #224	@ 0xe0
  8000fb2:	4860      	ldr	r0, [pc, #384]	@ (8001134 <main+0x370>)
  8000fb4:	f001 f976 	bl	80022a4 <SPIWrite>
-		//SPIWrite(&hspi1, 0b11100000); //LTC6802-2 in HV- measures 9 cells, so cells from 10 to 12 are masked
 		SPIWrite(&hspi1, 0b00000000);
  8000fb8:	2100      	movs	r1, #0
  8000fba:	485e      	ldr	r0, [pc, #376]	@ (8001134 <main+0x370>)
@@ -2307,11 +2306,10 @@ int main(void) {
  8001036:	4619      	mov	r1, r3
  8001038:	4840      	ldr	r0, [pc, #256]	@ (800113c <main+0x378>)
  800103a:	f001 f933 	bl	80022a4 <SPIWrite>
-		SPIWrite(&hspi2, 0b00000000);
- 800103e:	2100      	movs	r1, #0
+		SPIWrite(&hspi2, 0b11000000); //LTC6802-2 in HV- measures 10 cells, so cells from 11 to 12 are masked
+ 800103e:	21c0      	movs	r1, #192	@ 0xc0
  8001040:	483e      	ldr	r0, [pc, #248]	@ (800113c <main+0x378>)
  8001042:	f001 f92f 	bl	80022a4 <SPIWrite>
-		//SPIWrite(&hspi2, 0b11000000); //LTC6802-2 in HV- measures 10 cells, so cells from 11 to 12 are masked
 		SPIWrite(&hspi2, 0b00000000);
  8001046:	2100      	movs	r1, #0
  8001048:	483c      	ldr	r0, [pc, #240]	@ (800113c <main+0x378>)
