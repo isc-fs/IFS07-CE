@@ -264,7 +264,9 @@ int main(void) {
 		HAL_GPIO_WritePin(LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN,
 				GPIO_PIN_SET);
 
-		Delay_us(100);
+		//Delay_us(100);
+
+		HAL_Delay(5);
 
 		//Start voltage sampling
 		HAL_GPIO_WritePin(LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN,
@@ -274,6 +276,8 @@ int main(void) {
 
 		HAL_GPIO_WritePin(LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN,
 				GPIO_PIN_SET);
+
+		HAL_Delay(15);
 
 		//Configure LTC6802 2 (HV+)
 
@@ -290,7 +294,9 @@ int main(void) {
 		HAL_GPIO_WritePin(LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN,
 				GPIO_PIN_SET);
 
-		Delay_us(100);
+		//Delay_us(100);
+
+		HAL_Delay(5);
 
 		//Start voltage sampling
 		HAL_GPIO_WritePin(LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN,
@@ -301,7 +307,7 @@ int main(void) {
 		HAL_GPIO_WritePin(LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN,
 				GPIO_PIN_SET);
 
-		HAL_Delay(20);
+		HAL_Delay(15);
 
 		//Read cell voltage registers HV-
 		HAL_GPIO_WritePin(LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN,
@@ -630,12 +636,13 @@ int main(void) {
 
 		else {
 			HAL_Delay(4);
-			/* USER CODE END WHILE */
 
-			/* USER CODE BEGIN 3 */
 		}
-		/* USER CODE END 3 */
+		/* USER CODE END WHILE */
+
+		/* USER CODE BEGIN 3 */
 	}
+	/* USER CODE END 3 */
 }
 
 /**
@@ -744,7 +751,7 @@ static void MX_SPI1_Init(void) {
 	hspi1.Init.CLKPolarity = SPI_POLARITY_HIGH;
 	hspi1.Init.CLKPhase = SPI_PHASE_2EDGE;
 	hspi1.Init.NSS = SPI_NSS_SOFT;
-	hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
+	hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
 	hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
 	hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
 	hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -780,7 +787,7 @@ static void MX_SPI2_Init(void) {
 	hspi2.Init.CLKPolarity = SPI_POLARITY_HIGH;
 	hspi2.Init.CLKPhase = SPI_PHASE_2EDGE;
 	hspi2.Init.NSS = SPI_NSS_SOFT;
-	hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
+	hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
 	hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
 	hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
 	hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
