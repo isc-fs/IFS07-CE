@@ -979,24 +979,21 @@ void SPIWrite(SPI_HandleTypeDef *hspi, uint8_t cmd) {
 
 void SPIRead(SPI_HandleTypeDef *hspi, uint8_t cmd, uint8_t numRegisters,
 		uint8_t *const buff) {
-	uint8_t tx[1 + numRegisters];
-	uint8_t rx[1 + numRegisters];
 
-	tx[0] = cmd;
-	for (int i = 1; i < 1 + numRegisters; i++) {
-		tx[i] = 0x00; // dummy bytes
-	}
+	// Send command to read data
+	HAL_SPI_Transmit(hspi, &cmd, 1, HAL_MAX_DELAY);
 
-	HAL_SPI_TransmitReceive(hspi, tx, rx, 1 + numRegisters, HAL_MAX_DELAY);
+	// Read the data registers
+	HAL_SPI_Receive(hspi, buff, numRegisters, HAL_MAX_DELAY);
 
-	for (int i = 0; i < numRegisters; i++) {
-		buff[i] = rx[i + 1];
-	}
 }
 
 void readCellValues(SPI_HandleTypeDef *hspi, uint8_t cmd, uint8_t numRegisters,
 		uint8_t *const buff) {
-	SPIRead(hspi, cmd, numRegisters, buff);
+	do {
+		SPIRead(hspi, cmd, numRegisters, buff);
+	} while (buff[0] == 0xff);
+
 }
 
 uint8_t calculatePEC(uint8_t *data, uint8_t len) {

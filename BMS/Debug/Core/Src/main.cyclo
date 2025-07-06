@@ -10,8 +10,8 @@
 ../Core/Src/main.c:957:6:PubModuleID	2
 ../Core/Src/main.c:970:6:Delay_us	2
 ../Core/Src/main.c:976:6:SPIWrite	1
-../Core/Src/main.c:980:6:SPIRead	3
-../Core/Src/main.c:997:6:readCellValues	1
-../Core/Src/main.c:1002:9:calculatePEC	4
-../Core/Src/main.c:1016:6:RunSelfTest	1
-../Core/Src/main.c:1054:6:Error_Handler	1
+../Core/Src/main.c:980:6:SPIRead	1
+../Core/Src/main.c:991:6:readCellValues	2
+../Core/Src/main.c:999:9:calculatePEC	4
+../Core/Src/main.c:1013:6:RunSelfTest	1
+../Core/Src/main.c:1051:6:Error_Handler	1
