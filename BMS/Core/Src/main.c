@@ -67,7 +67,7 @@ uint8_t errorLTC2 = 0;
 #define LTC6802_CS2_GPIO_PORT GPIOB
 #define LTC6802_CS2_GPIO_PIN  GPIO_PIN_12
 
-#define TEMPS 1 //For testing the ds18b20 readings disabling cell measurement
+#define TEMPS 0 //For testing the ds18b20 readings disabling cell measurement
 
 /* USER CODE END PD */
 
@@ -106,6 +106,8 @@ volatile uint8_t dataRequestedL = false; // Low group, LTC #2
 volatile uint8_t dataRequestedH = false; // High group, LTC #1
 volatile uint8_t temperaturesRequested = false; //Temperatures
 volatile uint8_t rawValuesRequested = false;
+volatile uint8_t selfTestRequested = false;
+volatile uint8_t selfTest2Requested = false;
 
 uint16_t moduleID = 0;
 
@@ -136,7 +138,7 @@ void SPIRead(SPI_HandleTypeDef *hspi, uint8_t cmd, uint8_t numRegisters,
 void readCellValues(SPI_HandleTypeDef *hspi, uint8_t cmd, uint8_t numRegisters,
 		uint8_t *const buff);
 uint8_t calculatePEC(uint8_t *data, uint8_t len);
-
+void RunSelfTest(uint8_t *cellBytes1, uint8_t *cellBytes2, uint8_t testCommand);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -542,6 +544,86 @@ int main(void) {
 
 				HAL_Delay(1);
 			}
+		} else if (selfTestRequested) {
+			selfTestRequested = false;
+			commsTimer = 0;
+
+			RunSelfTest(cellBytes1, cellBytes2, 0x1E);
+
+			for (int packet = 0; packet < 3; packet++) {
+				for (int i = 0; i < 6; i++) {
+					txData[i] = cellBytes1[packet * 6 + i];
+				}
+				txData[6] = 0xE0 + packet; // etiqueta especial para Self Test
+				txData[7] = 0;
+
+				txHeader.StdId = moduleID + 120 + packet;
+				txHeader.DLC = 8;
+				txHeader.IDE = CAN_ID_STD;
+				txHeader.RTR = CAN_RTR_DATA;
+
+				if (HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &TxMailBox)
+						!= HAL_OK)
+					Error_Handler();
+
+				HAL_Delay(1);
+			}
+
+			for (int packet = 0; packet < 3; packet++) {
+				for (int i = 0; i < 6; i++) {
+					txData[i] = cellBytes2[packet * 6 + i];
+				}
+				txData[6] = 0xF0 + packet;
+				txData[7] = 0;
+
+				txHeader.StdId = moduleID + 125 + packet;
+
+				if (HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &TxMailBox)
+						!= HAL_OK)
+					Error_Handler();
+
+				HAL_Delay(1);
+			}
+		} else if (selfTest2Requested) {
+			selfTest2Requested = false;
+			commsTimer = 0;
+
+			RunSelfTest(cellBytes1, cellBytes2, 0x1F); // Self Test 2
+
+			for (int packet = 0; packet < 3; packet++) {
+				for (int i = 0; i < 6; i++) {
+					txData[i] = cellBytes1[packet * 6 + i];
+				}
+				txData[6] = 0xD0 + packet; // etiqueta para Self Test 2 LTC1
+				txData[7] = 0;
+
+				txHeader.StdId = moduleID + 110 + packet;
+				txHeader.DLC = 8;
+				txHeader.IDE = CAN_ID_STD;
+				txHeader.RTR = CAN_RTR_DATA;
+
+				if (HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &TxMailBox)
+						!= HAL_OK)
+					Error_Handler();
+
+				HAL_Delay(1);
+			}
+
+			for (int packet = 0; packet < 3; packet++) {
+				for (int i = 0; i < 6; i++) {
+					txData[i] = cellBytes2[packet * 6 + i];
+				}
+				txData[6] = 0xC0 + packet; // etiqueta para Self Test 2 LTC2
+				txData[7] = 0;
+
+				txHeader.StdId = moduleID + 115 + packet;
+
+				if (HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &TxMailBox)
+						!= HAL_OK)
+					Error_Handler();
+
+				HAL_Delay(1);
+			}
 		}
 
 		else {
@@ -838,6 +920,14 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
 	if (rxPacketID == moduleID + 25) {
 		rawValuesRequested = true;
 	}
+
+	if (rxPacketID == moduleID + 15) {
+		selfTestRequested = true;
+	}
+
+	else if (rxPacketID == moduleID + 16) {
+		selfTest2Requested = true;
+	}
 }
 
 void GetModuleID(void) {
@@ -878,39 +968,26 @@ void SPIWrite(SPI_HandleTypeDef *hspi, uint8_t cmd) {
 	HAL_SPI_Transmit(hspi, (uint8_t*) &cmd, 1, HAL_MAX_DELAY);
 }
 
-void SPIRead(SPI_HandleTypeDef *hspi, uint8_t cmd, uint8_t numRegisters, uint8_t *const buff) {
-    uint8_t tx[1 + numRegisters];
-    uint8_t rx[1 + numRegisters];
+void SPIRead(SPI_HandleTypeDef *hspi, uint8_t cmd, uint8_t numRegisters,
+		uint8_t *const buff) {
+	uint8_t tx[1 + numRegisters];
+	uint8_t rx[1 + numRegisters];
 
-    tx[0] = cmd;
-    for (int i = 1; i < 1 + numRegisters; i++) {
-        tx[i] = 0x00; // dummy bytes
-    }
+	tx[0] = cmd;
+	for (int i = 1; i < 1 + numRegisters; i++) {
+		tx[i] = 0x00; // dummy bytes
+	}
 
-    HAL_SPI_TransmitReceive(hspi, tx, rx, 1 + numRegisters, HAL_MAX_DELAY);
+	HAL_SPI_TransmitReceive(hspi, tx, rx, 1 + numRegisters, HAL_MAX_DELAY);
 
-    for (int i = 0; i < numRegisters; i++) {
-        buff[i] = rx[i + 1];
-    }
+	for (int i = 0; i < numRegisters; i++) {
+		buff[i] = rx[i + 1];
+	}
 }
-
 
 void readCellValues(SPI_HandleTypeDef *hspi, uint8_t cmd, uint8_t numRegisters,
 		uint8_t *const buff) {
-	uint8_t rawBuff[19];  // 18 data bytes + 1 PEC
-	do {
-		SPIRead(hspi, cmd, numRegisters, buff);
-	} while (buff[0] == 0xFF);
-
-	/*	uint8_t pecCalculated = calculatePEC(rawBuff, 18);
-	 uint8_t pecReceived = rawBuff[18];
-
-	 if (pecCalculated != pecReceived) {
-	 Error_Handler();
-	 }
-
-	 // Copy 18 data bytes to original buffer
-	 memcpy(buff, rawBuff, 18);*/
+	SPIRead(hspi, cmd, numRegisters, buff);
 }
 
 uint8_t calculatePEC(uint8_t *data, uint8_t len) {
@@ -925,6 +1002,38 @@ uint8_t calculatePEC(uint8_t *data, uint8_t len) {
 		}
 	}
 	return crc;
+}
+
+void RunSelfTest(uint8_t *cellBytes1, uint8_t *cellBytes2, uint8_t testCommand) {
+	// Enviar comando de Self Test
+	HAL_GPIO_WritePin(LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN,
+			GPIO_PIN_RESET);
+	SPIWrite(&hspi1, testCommand);
+	HAL_GPIO_WritePin(LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN,
+			GPIO_PIN_SET);
+
+	HAL_GPIO_WritePin(LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN,
+			GPIO_PIN_RESET);
+	SPIWrite(&hspi2, testCommand);
+	HAL_GPIO_WritePin(LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN,
+			GPIO_PIN_SET);
+
+	HAL_Delay(20);
+
+	// Leer registros de celdas
+	HAL_GPIO_WritePin(LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN,
+			GPIO_PIN_RESET);
+	SPIWrite(&hspi1, 0x04); // RDCV
+	readCellValues(&hspi1, 0x04, 18, cellBytes1);
+	HAL_GPIO_WritePin(LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN,
+			GPIO_PIN_SET);
+
+	HAL_GPIO_WritePin(LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN,
+			GPIO_PIN_RESET);
+	SPIWrite(&hspi2, 0x04);
+	readCellValues(&hspi2, 0x04, 18, cellBytes2);
+	HAL_GPIO_WritePin(LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN,
+			GPIO_PIN_SET);
 }
 
 /* USER CODE END 4 */
