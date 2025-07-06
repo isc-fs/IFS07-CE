@@ -254,10 +254,11 @@ int main(void) {
 		HAL_GPIO_WritePin(LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN,
 				GPIO_PIN_RESET);
 		SPIWrite(&hspi1, WRCFG);
-		SPIWrite(&hspi1, 0b00000001);
+		SPIWrite(&hspi1, 0b00001001);
 		SPIWrite(&hspi1, ((unsigned short) (shuntBitsL & 0x00FF)));
 		SPIWrite(&hspi1, ((unsigned short) (shuntBitsL >> 8)));
-		SPIWrite(&hspi1, 0b11100000); //LTC6802-2 in HV- measures 9 cells, so cells from 10 to 12 are masked
+		SPIWrite(&hspi1, 0b00000000);
+		//SPIWrite(&hspi1, 0b11100000); //LTC6802-2 in HV- measures 9 cells, so cells from 10 to 12 are masked
 		SPIWrite(&hspi1, 0b00000000);
 		SPIWrite(&hspi1, 0b00000000);
 		HAL_GPIO_WritePin(LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN,
@@ -279,10 +280,11 @@ int main(void) {
 		HAL_GPIO_WritePin(LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN,
 				GPIO_PIN_RESET);
 		SPIWrite(&hspi2, WRCFG);
-		SPIWrite(&hspi2, 0b00000001);
+		SPIWrite(&hspi2, 0b00001001);
 		SPIWrite(&hspi2, ((unsigned short) (shuntBitsH & 0x00FF)));
 		SPIWrite(&hspi2, ((unsigned short) (shuntBitsH >> 8)));
-		SPIWrite(&hspi2, 0b11000000); //LTC6802-2 in HV- measures 10 cells, so cells from 11 to 12 are masked
+		SPIWrite(&hspi2, 0b00000000);
+		//SPIWrite(&hspi2, 0b11000000); //LTC6802-2 in HV- measures 10 cells, so cells from 11 to 12 are masked
 		SPIWrite(&hspi2, 0b00000000);
 		SPIWrite(&hspi2, 0b00000000);
 		HAL_GPIO_WritePin(LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN,

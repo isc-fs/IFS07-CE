@@ -2209,8 +2209,8 @@ int main(void) {
  8000f82:	4619      	mov	r1, r3
  8000f84:	486a      	ldr	r0, [pc, #424]	@ (8001130 <main+0x36c>)
  8000f86:	f001 f98b 	bl	80022a0 <SPIWrite>
-		SPIWrite(&hspi1, 0b00000001);
- 8000f8a:	2101      	movs	r1, #1
+		SPIWrite(&hspi1, 0b00001001);
+ 8000f8a:	2109      	movs	r1, #9
  8000f8c:	4868      	ldr	r0, [pc, #416]	@ (8001130 <main+0x36c>)
  8000f8e:	f001 f987 	bl	80022a0 <SPIWrite>
 		SPIWrite(&hspi1, ((unsigned short) (shuntBitsL & 0x00FF)));
@@ -2226,10 +2226,11 @@ int main(void) {
  8000fa8:	4619      	mov	r1, r3
  8000faa:	4861      	ldr	r0, [pc, #388]	@ (8001130 <main+0x36c>)
  8000fac:	f001 f978 	bl	80022a0 <SPIWrite>
-		SPIWrite(&hspi1, 0b11100000); //LTC6802-2 in HV- measures 9 cells, so cells from 10 to 12 are masked
- 8000fb0:	21e0      	movs	r1, #224	@ 0xe0
+		SPIWrite(&hspi1, 0b00000000);
+ 8000fb0:	2100      	movs	r1, #0
  8000fb2:	485f      	ldr	r0, [pc, #380]	@ (8001130 <main+0x36c>)
  8000fb4:	f001 f974 	bl	80022a0 <SPIWrite>
+		//SPIWrite(&hspi1, 0b11100000); //LTC6802-2 in HV- measures 9 cells, so cells from 10 to 12 are masked
 		SPIWrite(&hspi1, 0b00000000);
  8000fb8:	2100      	movs	r1, #0
  8000fba:	485d      	ldr	r0, [pc, #372]	@ (8001130 <main+0x36c>)
@@ -2283,8 +2284,8 @@ int main(void) {
  800100a:	4619      	mov	r1, r3
  800100c:	484a      	ldr	r0, [pc, #296]	@ (8001138 <main+0x374>)
  800100e:	f001 f947 	bl	80022a0 <SPIWrite>
-		SPIWrite(&hspi2, 0b00000001);
- 8001012:	2101      	movs	r1, #1
+		SPIWrite(&hspi2, 0b00001001);
+ 8001012:	2109      	movs	r1, #9
  8001014:	4848      	ldr	r0, [pc, #288]	@ (8001138 <main+0x374>)
  8001016:	f001 f943 	bl	80022a0 <SPIWrite>
 		SPIWrite(&hspi2, ((unsigned short) (shuntBitsH & 0x00FF)));
@@ -2300,10 +2301,11 @@ int main(void) {
  8001030:	4619      	mov	r1, r3
  8001032:	4841      	ldr	r0, [pc, #260]	@ (8001138 <main+0x374>)
  8001034:	f001 f934 	bl	80022a0 <SPIWrite>
-		SPIWrite(&hspi2, 0b11000000); //LTC6802-2 in HV- measures 10 cells, so cells from 11 to 12 are masked
- 8001038:	21c0      	movs	r1, #192	@ 0xc0
+		SPIWrite(&hspi2, 0b00000000);
+ 8001038:	2100      	movs	r1, #0
  800103a:	483f      	ldr	r0, [pc, #252]	@ (8001138 <main+0x374>)
  800103c:	f001 f930 	bl	80022a0 <SPIWrite>
+		//SPIWrite(&hspi2, 0b11000000); //LTC6802-2 in HV- measures 10 cells, so cells from 11 to 12 are masked
 		SPIWrite(&hspi2, 0b00000000);
  8001040:	2100      	movs	r1, #0
  8001042:	483d      	ldr	r0, [pc, #244]	@ (8001138 <main+0x374>)
