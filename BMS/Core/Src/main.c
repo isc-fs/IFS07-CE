@@ -67,6 +67,7 @@ uint8_t errorLTC2 = 0;
 #define cellRegisters 19
 
 #define maxCells 12
+#define maxTemps 38
 
 #define LTC6802_CS1_GPIO_PORT GPIOA
 #define LTC6802_CS1_GPIO_PIN GPIO_PIN_8
@@ -125,8 +126,8 @@ int data_counter = 0;
 
 uint32_t commsTimer = 0;
 
-float temp[38];	  // In deg C
-int voltages[12]; // In millivolts
+float temp[maxTemps];	  // In deg C
+int voltages[maxCells]; // In millivolts
 
 volatile uint16_t shuntVoltage; // In millivolts
 uint32_t shuntBits;
@@ -207,9 +208,9 @@ int main(void)
 	PubModuleID();
 	TM_OneWire_Init(&OneWire1, GPIOA, DQ_Pin);
 
-	for (int n = 0; n < 24; n++)
+	for (int n = 0; n < maxCells; n++)
 		voltage[n] = 0;
-	for (int n = 0; n < 38; n++)
+	for (int n = 0; n < maxTemps; n++)
 		temp[n] = 0;
 
 	uint8_t cellBytes1[cellRegisters];
@@ -219,7 +220,7 @@ int main(void)
 		cellBytes1[n] = 0;
 		cellBytes2[n] = 0;
 	}
-	int voltages[24][8];
+	//int voltages[24][8]; //De momento no hacemos la media
 	uint8_t counter = 0;
 	uint8_t slowCounter = 0;
 
@@ -251,7 +252,7 @@ int main(void)
 								 TM_DS18B20_Resolution_9bits);
 	}
 
-	// Calculates the necesary can packets for sending all the temperatures
+	// Calculates the necesary CAN packets for sending all the temperatures
 	uint8_t n_packets_temps = sensor_count / 8 + ((sensor_count % 8) ? 1 : 0);
 
 	if (sensor_count > 0)
@@ -320,7 +321,7 @@ int main(void)
 		// Read cell voltage registers HV-
 		if (readCellValues(&hspi1, LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN, 0, cellBytes1))
 		{
-			decodeCellVoltages(cellBytes, voltages);
+			decodeCellVoltages(cellBytes1, voltages);
 
 #endif
 
@@ -345,38 +346,12 @@ int main(void)
 			if (counter >= 8)
 			{
 				counter = 0;
+				slowCounter = (slowCounter + 1) % 4;
 
-				slowCounter++;
-
-				if (slowCounter >= 4)
-					slowCounter = 0;
-
-				char notAllZeroVolts = false;
-
-				int correction = LOW_LTC_CORRECTION;
-				if (n >= 12)
-					correction = HIGH_LTC_CORRECTION;
-
-				if (voltage[n] > 0)
-				{
-					voltage[n] += correction; // With high inpedance input filters, they're reading about 8mV too low
-					if (n == 0 || n == 12)
-						voltage[n] -= correction / 2; // First cell has less drop due to single 3.3Kohm resistor in play
-				}
-
-				if (voltage[n] > 5000)
-					voltage[n] = 0; // Probably no cells plugged in to power the LTC
-
-				if (voltage[n] > 0)
-					notAllZeroVolts = true;
-
-				if (voltage[n] > shuntVoltage && shuntVoltage > 0)
-					shuntBits |= (1 << n);
-				else
-					shuntBits &= ~(1 << n);
+				updateLEDStatus(voltages, maxCells, shuntBits, slowCounter, commsTimer, COMMS_TIMEOUT, shuntVoltage);
 			}
 
-			*/
+			
 
 			// ds18b20_flag = TM_OneWire_Reset(&OneWire1);
 #if TEMPS
@@ -633,514 +608,547 @@ int main(void)
 			}
 		}
 		/* USER CODE END WHILE */
-
-		/* USER CODE BEGIN 3 */
-
-		/* USER CODE END 3 */
 	}
+	/* USER CODE BEGIN 3 */
 
-	/**
-	 * @brief System Clock Configuration
-	 * @retval None
+	/* USER CODE END 3 */
+}
+
+/**
+ * @brief System Clock Configuration
+ * @retval None
+ */
+void SystemClock_Config(void)
+{
+	RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+	RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+
+	/** Initializes the RCC Oscillators according to the specified parameters
+	 * in the RCC_OscInitTypeDef structure.
 	 */
-	void SystemClock_Config(void)
+	RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+	RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+	RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+	RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI_DIV2;
+	RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL16;
+	if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
 	{
-		RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-		RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
-
-		/** Initializes the RCC Oscillators according to the specified parameters
-		 * in the RCC_OscInitTypeDef structure.
-		 */
-		RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
-		RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-		RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-		RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-		RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI_DIV2;
-		RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL16;
-		if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-		{
-			Error_Handler();
-		}
-
-		/** Initializes the CPU, AHB and APB buses clocks
-		 */
-		RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
-		RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-		RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-		RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV8;
-		RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV8;
-
-		if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
-		{
-			Error_Handler();
-		}
+		Error_Handler();
 	}
 
-	/**
-	 * @brief CAN Initialization Function
-	 * @param None
-	 * @retval None
+	/** Initializes the CPU, AHB and APB buses clocks
 	 */
-	static void MX_CAN_Init(void)
+	RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+	RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+	RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV8;
+	RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV8;
+
+	if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
 	{
+		Error_Handler();
+	}
+}
 
-		/* USER CODE BEGIN CAN_Init 0 */
+/**
+ * @brief CAN Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_CAN_Init(void)
+{
 
-		/* USER CODE END CAN_Init 0 */
+	/* USER CODE BEGIN CAN_Init 0 */
 
-		/* USER CODE BEGIN CAN_Init 1 */
+	/* USER CODE END CAN_Init 0 */
 
-		/* USER CODE END CAN_Init 1 */
-		hcan.Instance = CAN1;
-		hcan.Init.Prescaler = 2;
-		hcan.Init.Mode = CAN_MODE_NORMAL;
-		hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
-		hcan.Init.TimeSeg1 = CAN_BS1_4TQ;
-		hcan.Init.TimeSeg2 = CAN_BS2_3TQ;
-		hcan.Init.TimeTriggeredMode = DISABLE;
-		hcan.Init.AutoBusOff = DISABLE;
-		hcan.Init.AutoWakeUp = DISABLE;
-		hcan.Init.AutoRetransmission = DISABLE;
-		hcan.Init.ReceiveFifoLocked = DISABLE;
-		hcan.Init.TransmitFifoPriority = DISABLE;
-		if (HAL_CAN_Init(&hcan) != HAL_OK)
-		{
-			Error_Handler();
-		}
-		/* USER CODE BEGIN CAN_Init 2 */
-		CAN_FilterTypeDef canfilterconfig;
+	/* USER CODE BEGIN CAN_Init 1 */
 
-		canfilterconfig.FilterActivation = CAN_FILTER_ENABLE;
-		canfilterconfig.FilterBank = 0;
-		canfilterconfig.FilterFIFOAssignment = CAN_FILTER_FIFO0;
-		canfilterconfig.FilterIdHigh = 0;
-		canfilterconfig.FilterIdLow = 0;
-		canfilterconfig.FilterMaskIdHigh = 0;
-		canfilterconfig.FilterMaskIdLow = 0;
-		canfilterconfig.FilterMode = CAN_FILTERMODE_IDMASK;
-		canfilterconfig.FilterScale = CAN_FILTERSCALE_32BIT;
-		canfilterconfig.SlaveStartFilterBank = 0;
+	/* USER CODE END CAN_Init 1 */
+	hcan.Instance = CAN1;
+	hcan.Init.Prescaler = 2;
+	hcan.Init.Mode = CAN_MODE_NORMAL;
+	hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
+	hcan.Init.TimeSeg1 = CAN_BS1_4TQ;
+	hcan.Init.TimeSeg2 = CAN_BS2_3TQ;
+	hcan.Init.TimeTriggeredMode = DISABLE;
+	hcan.Init.AutoBusOff = DISABLE;
+	hcan.Init.AutoWakeUp = DISABLE;
+	hcan.Init.AutoRetransmission = DISABLE;
+	hcan.Init.ReceiveFifoLocked = DISABLE;
+	hcan.Init.TransmitFifoPriority = DISABLE;
+	if (HAL_CAN_Init(&hcan) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	/* USER CODE BEGIN CAN_Init 2 */
+	CAN_FilterTypeDef canfilterconfig;
 
-		HAL_CAN_ConfigFilter(&hcan, &canfilterconfig);
+	canfilterconfig.FilterActivation = CAN_FILTER_ENABLE;
+	canfilterconfig.FilterBank = 0;
+	canfilterconfig.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+	canfilterconfig.FilterIdHigh = 0;
+	canfilterconfig.FilterIdLow = 0;
+	canfilterconfig.FilterMaskIdHigh = 0;
+	canfilterconfig.FilterMaskIdLow = 0;
+	canfilterconfig.FilterMode = CAN_FILTERMODE_IDMASK;
+	canfilterconfig.FilterScale = CAN_FILTERSCALE_32BIT;
+	canfilterconfig.SlaveStartFilterBank = 0;
 
-		/* USER CODE END CAN_Init 2 */
+	HAL_CAN_ConfigFilter(&hcan, &canfilterconfig);
+
+	/* USER CODE END CAN_Init 2 */
+}
+
+/**
+ * @brief SPI1 Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_SPI1_Init(void)
+{
+
+	/* USER CODE BEGIN SPI1_Init 0 */
+
+	/* USER CODE END SPI1_Init 0 */
+
+	/* USER CODE BEGIN SPI1_Init 1 */
+
+	/* USER CODE END SPI1_Init 1 */
+	/* SPI1 parameter configuration*/
+	hspi1.Instance = SPI1;
+	hspi1.Init.Mode = SPI_MODE_MASTER;
+	hspi1.Init.Direction = SPI_DIRECTION_2LINES;
+	hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
+	hspi1.Init.CLKPolarity = SPI_POLARITY_HIGH;
+	hspi1.Init.CLKPhase = SPI_PHASE_2EDGE;
+	hspi1.Init.NSS = SPI_NSS_SOFT;
+	hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
+	hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
+	hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
+	hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+	hspi1.Init.CRCPolynomial = 10;
+	if (HAL_SPI_Init(&hspi1) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	/* USER CODE BEGIN SPI1_Init 2 */
+
+	/* USER CODE END SPI1_Init 2 */
+}
+
+/**
+ * @brief SPI2 Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_SPI2_Init(void)
+{
+
+	/* USER CODE BEGIN SPI2_Init 0 */
+
+	/* USER CODE END SPI2_Init 0 */
+
+	/* USER CODE BEGIN SPI2_Init 1 */
+
+	/* USER CODE END SPI2_Init 1 */
+	/* SPI2 parameter configuration*/
+	hspi2.Instance = SPI2;
+	hspi2.Init.Mode = SPI_MODE_MASTER;
+	hspi2.Init.Direction = SPI_DIRECTION_2LINES;
+	hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
+	hspi2.Init.CLKPolarity = SPI_POLARITY_HIGH;
+	hspi2.Init.CLKPhase = SPI_PHASE_2EDGE;
+	hspi2.Init.NSS = SPI_NSS_SOFT;
+	hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
+	hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
+	hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
+	hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+	hspi2.Init.CRCPolynomial = 10;
+	if (HAL_SPI_Init(&hspi2) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	/* USER CODE BEGIN SPI2_Init 2 */
+
+	/* USER CODE END SPI2_Init 2 */
+}
+
+/**
+ * @brief TIM1 Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_TIM1_Init(void)
+{
+
+	/* USER CODE BEGIN TIM1_Init 0 */
+
+	/* USER CODE END TIM1_Init 0 */
+
+	TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+	TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+	/* USER CODE BEGIN TIM1_Init 1 */
+
+	/* USER CODE END TIM1_Init 1 */
+	htim1.Instance = TIM1;
+	htim1.Init.Prescaler = 16 - 1;
+	htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
+	htim1.Init.Period = 65535;
+	htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+	htim1.Init.RepetitionCounter = 0;
+	htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+	if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+	if (HAL_TIM_ConfigClockSource(&htim1, &sClockSourceConfig) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+	sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+	if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	/* USER CODE BEGIN TIM1_Init 2 */
+
+	/* USER CODE END TIM1_Init 2 */
+}
+
+/**
+ * @brief GPIO Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_GPIO_Init(void)
+{
+	GPIO_InitTypeDef GPIO_InitStruct = {0};
+	/* USER CODE BEGIN MX_GPIO_Init_1 */
+	/* USER CODE END MX_GPIO_Init_1 */
+
+	/* GPIO Ports Clock Enable */
+	__HAL_RCC_GPIOD_CLK_ENABLE();
+	__HAL_RCC_GPIOA_CLK_ENABLE();
+	__HAL_RCC_GPIOB_CLK_ENABLE();
+
+	/*Configure GPIO pin Output Level */
+	HAL_GPIO_WritePin(GPIOA, DQ_Pin | GPIO_PIN_10 | GPIO_PIN_15,
+					  GPIO_PIN_RESET);
+
+	/*Configure GPIO pin Output Level */
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
+
+	/*Configure GPIO pin Output Level */
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
+
+	/*Configure GPIO pins : DQ_Pin PA8 PA10 PA15 */
+	GPIO_InitStruct.Pin = DQ_Pin | GPIO_PIN_8 | GPIO_PIN_10 | GPIO_PIN_15;
+	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+	/*Configure GPIO pins : PB10 PB7 PB8 PB9 */
+	GPIO_InitStruct.Pin =
+		GPIO_PIN_10 | GPIO_PIN_7 | GPIO_PIN_8 | GPIO_PIN_9;
+	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	GPIO_InitStruct.Pull = GPIO_PULLUP;
+	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+	/*Configure GPIO pin : PB12 */
+	GPIO_InitStruct.Pin = GPIO_PIN_12;
+	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+	/* USER CODE BEGIN MX_GPIO_Init_2 */
+	/* USER CODE END MX_GPIO_Init_2 */
+}
+
+/* USER CODE BEGIN 4 */
+
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+	CAN_RxHeaderTypeDef rxHeader;
+	uint8_t rxData[8];
+
+	if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rxHeader, rxData) != HAL_OK)
+	{
+		// Reception error
+		Error_Handler();
 	}
 
-	/**
-	 * @brief SPI1 Initialization Function
-	 * @param None
-	 * @retval None
-	 */
-	static void MX_SPI1_Init(void)
+	// Process received data
+	uint32_t rxPacketID = rxHeader.StdId;
+	if (USE_29BIT_IDS)
 	{
-
-		/* USER CODE BEGIN SPI1_Init 0 */
-
-		/* USER CODE END SPI1_Init 0 */
-
-		/* USER CODE BEGIN SPI1_Init 1 */
-
-		/* USER CODE END SPI1_Init 1 */
-		/* SPI1 parameter configuration*/
-		hspi1.Instance = SPI1;
-		hspi1.Init.Mode = SPI_MODE_MASTER;
-		hspi1.Init.Direction = SPI_DIRECTION_2LINES;
-		hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
-		hspi1.Init.CLKPolarity = SPI_POLARITY_HIGH;
-		hspi1.Init.CLKPhase = SPI_PHASE_2EDGE;
-		hspi1.Init.NSS = SPI_NSS_SOFT;
-		hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
-		hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
-		hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
-		hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
-		hspi1.Init.CRCPolynomial = 10;
-		if (HAL_SPI_Init(&hspi1) != HAL_OK)
-		{
-			Error_Handler();
-		}
-		/* USER CODE BEGIN SPI1_Init 2 */
-
-		/* USER CODE END SPI1_Init 2 */
+		rxPacketID = rxHeader.ExtId;
 	}
 
-	/**
-	 * @brief SPI2 Initialization Function
-	 * @param None
-	 * @retval None
-	 */
-	static void MX_SPI2_Init(void)
+	// Only one packet we care about - the data request
+	if (rxPacketID == moduleID)
 	{
-
-		/* USER CODE BEGIN SPI2_Init 0 */
-
-		/* USER CODE END SPI2_Init 0 */
-
-		/* USER CODE BEGIN SPI2_Init 1 */
-
-		/* USER CODE END SPI2_Init 1 */
-		/* SPI2 parameter configuration*/
-		hspi2.Instance = SPI2;
-		hspi2.Init.Mode = SPI_MODE_MASTER;
-		hspi2.Init.Direction = SPI_DIRECTION_2LINES;
-		hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
-		hspi2.Init.CLKPolarity = SPI_POLARITY_HIGH;
-		hspi2.Init.CLKPhase = SPI_PHASE_2EDGE;
-		hspi2.Init.NSS = SPI_NSS_SOFT;
-		hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
-		hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
-		hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
-		hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
-		hspi2.Init.CRCPolynomial = 10;
-		if (HAL_SPI_Init(&hspi2) != HAL_OK)
-		{
-			Error_Handler();
-		}
-		/* USER CODE BEGIN SPI2_Init 2 */
-
-		/* USER CODE END SPI2_Init 2 */
+		shuntVoltage = (rxData[0] << 8) + rxData[1]; // Big endian format (high byte first)
+		dataRequestedL = true;
 	}
 
-	/**
-	 * @brief TIM1 Initialization Function
-	 * @param None
-	 * @retval None
-	 */
-	static void MX_TIM1_Init(void)
+	if (rxPacketID == moduleID + 10)
 	{
-
-		/* USER CODE BEGIN TIM1_Init 0 */
-
-		/* USER CODE END TIM1_Init 0 */
-
-		TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-		TIM_MasterConfigTypeDef sMasterConfig = {0};
-
-		/* USER CODE BEGIN TIM1_Init 1 */
-
-		/* USER CODE END TIM1_Init 1 */
-		htim1.Instance = TIM1;
-		htim1.Init.Prescaler = 16 - 1;
-		htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-		htim1.Init.Period = 65535;
-		htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-		htim1.Init.RepetitionCounter = 0;
-		htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-		if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
-		{
-			Error_Handler();
-		}
-		sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-		if (HAL_TIM_ConfigClockSource(&htim1, &sClockSourceConfig) != HAL_OK)
-		{
-			Error_Handler();
-		}
-		sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-		sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-		if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK)
-		{
-			Error_Handler();
-		}
-		/* USER CODE BEGIN TIM1_Init 2 */
-
-		/* USER CODE END TIM1_Init 2 */
+		shuntVoltage = (rxData[0] << 8) + rxData[1];
+		dataRequestedH = true;
 	}
 
-	/**
-	 * @brief GPIO Initialization Function
-	 * @param None
-	 * @retval None
-	 */
-	static void MX_GPIO_Init(void)
+	if (rxPacketID == moduleID + 20)
 	{
-		GPIO_InitTypeDef GPIO_InitStruct = {0};
-		/* USER CODE BEGIN MX_GPIO_Init_1 */
-		/* USER CODE END MX_GPIO_Init_1 */
-
-		/* GPIO Ports Clock Enable */
-		__HAL_RCC_GPIOD_CLK_ENABLE();
-		__HAL_RCC_GPIOA_CLK_ENABLE();
-		__HAL_RCC_GPIOB_CLK_ENABLE();
-
-		/*Configure GPIO pin Output Level */
-		HAL_GPIO_WritePin(GPIOA, DQ_Pin | GPIO_PIN_10 | GPIO_PIN_15,
-						  GPIO_PIN_RESET);
-
-		/*Configure GPIO pin Output Level */
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
-
-		/*Configure GPIO pin Output Level */
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
-
-		/*Configure GPIO pins : DQ_Pin PA8 PA10 PA15 */
-		GPIO_InitStruct.Pin = DQ_Pin | GPIO_PIN_8 | GPIO_PIN_10 | GPIO_PIN_15;
-		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-		GPIO_InitStruct.Pull = GPIO_NOPULL;
-		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-		HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-		/*Configure GPIO pins : PB10 PB7 PB8 PB9 */
-		GPIO_InitStruct.Pin =
-			GPIO_PIN_10 | GPIO_PIN_7 | GPIO_PIN_8 | GPIO_PIN_9;
-		GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-		GPIO_InitStruct.Pull = GPIO_PULLUP;
-		HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-		/*Configure GPIO pin : PB12 */
-		GPIO_InitStruct.Pin = GPIO_PIN_12;
-		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-		GPIO_InitStruct.Pull = GPIO_NOPULL;
-		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-		HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-		/* USER CODE BEGIN MX_GPIO_Init_2 */
-		/* USER CODE END MX_GPIO_Init_2 */
+		temperaturesRequested = true;
 	}
 
-	/* USER CODE BEGIN 4 */
-
-	void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef * hcan)
+	if (rxPacketID == moduleID + 25)
 	{
-		CAN_RxHeaderTypeDef rxHeader;
-		uint8_t rxData[8];
-
-		if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rxHeader, rxData) != HAL_OK)
-		{
-			// Reception error
-			Error_Handler();
-		}
-
-		// Process received data
-		uint32_t rxPacketID = rxHeader.StdId;
-		if (USE_29BIT_IDS)
-		{
-			rxPacketID = rxHeader.ExtId;
-		}
-
-		// Only one packet we care about - the data request
-		if (rxPacketID == moduleID)
-		{
-			shuntVoltage = (rxData[0] << 8) + rxData[1]; // Big endian format (high byte first)
-			dataRequestedL = true;
-		}
-
-		if (rxPacketID == moduleID + 10)
-		{
-			shuntVoltage = (rxData[0] << 8) + rxData[1];
-			dataRequestedH = true;
-		}
-
-		if (rxPacketID == moduleID + 20)
-		{
-			temperaturesRequested = true;
-		}
-
-		if (rxPacketID == moduleID + 25)
-		{
-			rawValuesRequested = true;
-		}
-
-		if (rxPacketID == moduleID + 15)
-		{
-			selfTestRequested = true;
-		}
-
-		else if (rxPacketID == moduleID + 16)
-		{
-			selfTest2Requested = true;
-		}
+		rawValuesRequested = true;
 	}
 
-	void GetModuleID(void)
+	if (rxPacketID == moduleID + 15)
 	{
-		uint8_t rotarySwitch = 0;
-
-		if (MOD_ID_NUM1)
-			rotarySwitch += 1;
-		if (MOD_ID_NUM2)
-			rotarySwitch += 2;
-		if (MOD_ID_NUM4)
-			rotarySwitch += 4;
-		if (MOD_ID_NUM8)
-			rotarySwitch += 8;
-
-		moduleID = BASE_ID + rotarySwitch * 30; // Atomic enough for 8-bit on STM32F1
+		selfTestRequested = true;
 	}
 
-	void PubModuleID(void)
+	else if (rxPacketID == moduleID + 16)
 	{
-		txHeader.DLC = 8;
-		txHeader.IDE = CAN_ID_STD;
-		txHeader.RTR = CAN_RTR_DATA;
-		txHeader.StdId = moduleID;
+		selfTest2Requested = true;
+	}
+}
 
-		if (HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &TxMailBox) != HAL_OK)
-		{
-			Error_Handler();
-		}
+void GetModuleID(void)
+{
+	uint8_t rotarySwitch = 0;
 
-		HAL_Delay(1);
+	if (MOD_ID_NUM1)
+		rotarySwitch += 1;
+	if (MOD_ID_NUM2)
+		rotarySwitch += 2;
+	if (MOD_ID_NUM4)
+		rotarySwitch += 4;
+	if (MOD_ID_NUM8)
+		rotarySwitch += 8;
+
+	moduleID = BASE_ID + rotarySwitch * 30; // Atomic enough for 8-bit on STM32F1
+}
+
+void PubModuleID(void)
+{
+	txHeader.DLC = 8;
+	txHeader.IDE = CAN_ID_STD;
+	txHeader.RTR = CAN_RTR_DATA;
+	txHeader.StdId = moduleID;
+
+	if (HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &TxMailBox) != HAL_OK)
+	{
+		Error_Handler();
 	}
 
-	void Delay_us(uint16_t us)
+	HAL_Delay(1);
+}
+
+void Delay_us(uint16_t us)
+{
+	__HAL_TIM_SET_COUNTER(&htim1, 0);
+	while (__HAL_TIM_GET_COUNTER(&htim1) < us)
+		;
+}
+
+void SPIWrite(SPI_HandleTypeDef *hspi, uint8_t cmd)
+{
+	HAL_SPI_Transmit(hspi, (uint8_t *)&cmd, 1, HAL_MAX_DELAY);
+}
+
+void SPIRead(SPI_HandleTypeDef *hspi, uint8_t cmd, uint8_t numRegisters,
+			 uint8_t *const buff)
+{
+
+	// Send command to read data
+	HAL_SPI_Transmit(hspi, &cmd, 1, HAL_MAX_DELAY);
+
+	// Read the data registers
+	HAL_SPI_Receive(hspi, buff, numRegisters, HAL_MAX_DELAY);
+}
+
+void waitForADCComplete(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port, uint16_t cs_pin)
+{
+	uint8_t cmd = 0x40; // PLADC (Poll ADC Conversion Status)
+	uint8_t response = 0x00;
+
+	do
 	{
-		__HAL_TIM_SET_COUNTER(&htim1, 0);
-		while (__HAL_TIM_GET_COUNTER(&htim1) < us)
-			;
-	}
-
-	void SPIWrite(SPI_HandleTypeDef * hspi, uint8_t cmd)
-	{
-		HAL_SPI_Transmit(hspi, (uint8_t *)&cmd, 1, HAL_MAX_DELAY);
-	}
-
-	void SPIRead(SPI_HandleTypeDef * hspi, uint8_t cmd, uint8_t numRegisters,
-				 uint8_t *const buff)
-	{
-
-		// Send command to read data
-		HAL_SPI_Transmit(hspi, &cmd, 1, HAL_MAX_DELAY);
-
-		// Read the data registers
-		HAL_SPI_Receive(hspi, buff, numRegisters, HAL_MAX_DELAY);
-	}
-
-	void waitForADCComplete(SPI_HandleTypeDef * hspi, GPIO_TypeDef * cs_port, uint16_t cs_pin)
-	{
-		uint8_t cmd = 0x40; // PLADC (Poll ADC Conversion Status)
-		uint8_t response = 0x00;
-
-		do
-		{
-			HAL_GPIO_WritePin(cs_port, cs_pin, GPIO_PIN_RESET);
-			HAL_SPI_Transmit(hspi, &cmd, 1, HAL_MAX_DELAY);
-			HAL_SPI_Receive(hspi, &response, 1, HAL_MAX_DELAY);
-			HAL_GPIO_WritePin(cs_port, cs_pin, GPIO_PIN_SET);
-		} while (response == 0x00); // Mientras el ADC esté ocupado
-	}
-
-	/*void readCellValues(SPI_HandleTypeDef *hspi, uint8_t cmd, uint8_t numRegisters,
-						uint8_t *const buff)
-	{
-		do
-		{
-			SPIRead(hspi, cmd, numRegisters, buff);
-		} while (buff[0] == 0xff);
-	}*/
-
-	bool readCellValues(SPI_HandleTypeDef * hspi, GPIO_TypeDef * cs_port, uint16_t cs_pin, uint8_t *buff)
-	{
-		uint8_t tx[2] = {0x80, RDCV}; // Address + command
 		HAL_GPIO_WritePin(cs_port, cs_pin, GPIO_PIN_RESET);
-		HAL_SPI_Transmit(hspi, tx, 2, HAL_MAX_DELAY);
-		HAL_SPI_Receive(hspi, buff, 19, HAL_MAX_DELAY);
+		HAL_SPI_Transmit(hspi, &cmd, 1, HAL_MAX_DELAY);
+		HAL_SPI_Receive(hspi, &response, 1, HAL_MAX_DELAY);
 		HAL_GPIO_WritePin(cs_port, cs_pin, GPIO_PIN_SET);
+	} while (response == 0x00); // Mientras el ADC esté ocupado
+}
 
-		uint8_t pec_received = buff[18];
-		uint8_t pec_calc = calculatePEC(buff, 18);
-
-		return pec_received == pec_calc;
-	}
-
-	void decodeCellVoltages(const uint8_t *cellBytes, float *voltages_mV)
+/*void readCellValues(SPI_HandleTypeDef *hspi, uint8_t cmd, uint8_t numRegisters,
+					uint8_t *const buff)
+{
+	do
 	{
-		for (int i = 0; i < 6; i++)
+		SPIRead(hspi, cmd, numRegisters, buff);
+	} while (buff[0] == 0xff);
+}*/
+
+bool readCellValues(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port, uint16_t cs_pin, uint8_t *buff)
+{
+	uint8_t tx[2] = {0x80, RDCV}; // Address + command
+	HAL_GPIO_WritePin(cs_port, cs_pin, GPIO_PIN_RESET);
+	HAL_SPI_Transmit(hspi, tx, 2, HAL_MAX_DELAY);
+	HAL_SPI_Receive(hspi, buff, 19, HAL_MAX_DELAY);
+	HAL_GPIO_WritePin(cs_port, cs_pin, GPIO_PIN_SET);
+
+	uint8_t pec_received = buff[18];
+	uint8_t pec_calc = calculatePEC(buff, 18);
+
+	return pec_received == pec_calc;
+}
+
+void decodeCellVoltages(const uint8_t *cellBytes, float *voltages_mV)
+{
+	for (int i = 0; i < 6; i++)
+	{
+		int idx = i * 3;
+
+		uint16_t adc1 = cellBytes[idx] + ((cellBytes[idx + 1] & 0x0F) << 8);
+		uint16_t adc2 = ((cellBytes[idx + 1] >> 4) & 0x0F) + (cellBytes[idx + 2] << 4);
+
+		float v1 = adc1 * 1.5f;
+		float v2 = adc2 * 1.5f;
+
+		voltages_mV[i * 2] = (v1 <= 5000.0f) ? v1 : 0.0f;
+		voltages_mV[i * 2 + 1] = (v2 <= 5000.0f) ? v2 : 0.0f;
+	}
+}
+
+uint8_t calculatePEC(uint8_t *data, uint8_t len)
+{
+	uint8_t crc = 0x00;
+	for (uint8_t i = 0; i < len; i++)
+	{
+		crc ^= data[i];
+		for (uint8_t j = 0; j < 8; j++)
 		{
-			int idx = i * 3;
-
-			uint16_t adc1 = cellBytes[idx] + ((cellBytes[idx + 1] & 0x0F) << 8);
-			uint16_t adc2 = ((cellBytes[idx + 1] >> 4) & 0x0F) + (cellBytes[idx + 2] << 4);
-
-			float v1 = adc1 * 1.5f;
-			float v2 = adc2 * 1.5f;
-
-			voltages_mV[i * 2] = (v1 <= 5000.0f) ? v1 : 0.0f;
-			voltages_mV[i * 2 + 1] = (v2 <= 5000.0f) ? v2 : 0.0f;
+			if (crc & 0x80)
+				crc = (crc << 1) ^ 0x07;
+			else
+				crc <<= 1;
 		}
 	}
+	return crc;
+}
 
-	uint8_t calculatePEC(uint8_t *data, uint8_t len)
+void RunSelfTest(uint8_t *cellBytes1, uint8_t *cellBytes2, uint8_t testCommand)
+{
+	// Enviar comando de Self Test
+	HAL_GPIO_WritePin(LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN,
+					  GPIO_PIN_RESET);
+	SPIWrite(&hspi1, testCommand);
+	HAL_GPIO_WritePin(LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN,
+					  GPIO_PIN_SET);
+
+	HAL_GPIO_WritePin(LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN,
+					  GPIO_PIN_RESET);
+	SPIWrite(&hspi2, testCommand);
+	HAL_GPIO_WritePin(LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN,
+					  GPIO_PIN_SET);
+
+	HAL_Delay(20);
+
+	// Leer registros de celdas
+	HAL_GPIO_WritePin(LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN,
+					  GPIO_PIN_RESET);
+	SPIWrite(&hspi1, RDCV); // RDCV
+	readCellValues(&hspi1, 0x04, 18, cellBytes1);
+	HAL_GPIO_WritePin(LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN,
+					  GPIO_PIN_SET);
+
+	HAL_GPIO_WritePin(LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN,
+					  GPIO_PIN_RESET);
+	SPIWrite(&hspi2, RDCV);
+	readCellValues(&hspi2, 0x04, 18, cellBytes2);
+	HAL_GPIO_WritePin(LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN,
+					  GPIO_PIN_SET);
+}
+
+void updateLEDStatus(const float *voltages,
+					 int num_cells,
+					 uint16_t shuntBits,
+					 uint8_t slowCounter,
+					 uint32_t commsTimer,
+					 uint32_t COMMS_TIMEOUT,
+					 float shuntVoltage)
+{
+	char notAllZeroVolts = false;
+
+	for (int n = 0; n < num_cells; n++)
 	{
-		uint8_t crc = 0x00;
-		for (uint8_t i = 0; i < len; i++)
-		{
-			crc ^= data[i];
-			for (uint8_t j = 0; j < 8; j++)
-			{
-				if (crc & 0x80)
-					crc = (crc << 1) ^ 0x07;
-				else
-					crc <<= 1;
-			}
-		}
-		return crc;
+		if (voltages[n] > 0.0f)
+			notAllZeroVolts = true;
 	}
 
-	void RunSelfTest(uint8_t *cellBytes1, uint8_t *cellBytes2, uint8_t testCommand)
+	// LEDs default: Green ON, Red OFF
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);   // Green ON
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_RESET); // Red OFF
+
+	if ((shuntBits != 0) && (slowCounter & 0x01))
 	{
-		// Enviar comando de Self Test
-		HAL_GPIO_WritePin(LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN,
-						  GPIO_PIN_RESET);
-		SPIWrite(&hspi1, testCommand);
-		HAL_GPIO_WritePin(LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN,
-						  GPIO_PIN_SET);
-
-		HAL_GPIO_WritePin(LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN,
-						  GPIO_PIN_RESET);
-		SPIWrite(&hspi2, testCommand);
-		HAL_GPIO_WritePin(LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN,
-						  GPIO_PIN_SET);
-
-		HAL_Delay(20);
-
-		// Leer registros de celdas
-		HAL_GPIO_WritePin(LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN,
-						  GPIO_PIN_RESET);
-		SPIWrite(&hspi1, RDCV); // RDCV
-		readCellValues(&hspi1, 0x04, 18, cellBytes1);
-		HAL_GPIO_WritePin(LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN,
-						  GPIO_PIN_SET);
-
-		HAL_GPIO_WritePin(LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN,
-						  GPIO_PIN_RESET);
-		SPIWrite(&hspi2, RDCV);
-		readCellValues(&hspi2, 0x04, 18, cellBytes2);
-		HAL_GPIO_WritePin(LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN,
-						  GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_SET); // Red blinking - balancing
 	}
-
-
-
-
-	/* USER CODE END 4 */
-
-	/**
-	 * @brief  This function is executed in case of error occurrence.
-	 * @retval None
-	 */
-	void Error_Handler(void)
+	else if (!notAllZeroVolts)
 	{
-		/* USER CODE BEGIN Error_Handler_Debug */
-		/* User can add his own implementation to report the HAL error return state */
-		__disable_irq();
-		while (1)
-		{
-		}
-		/* USER CODE END Error_Handler_Debug */
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET); // Green OFF
+		if (slowCounter & 0x01)
+			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_SET); // Red blinking - no cells
 	}
+	else if ((commsTimer == COMMS_TIMEOUT) && (slowCounter & 0x01))
+	{
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET); // Green blinkng - no CAN comunication
+	}
+}
+
+/* USER CODE END 4 */
+
+/**
+ * @brief  This function is executed in case of error occurrence.
+ * @retval None
+ */
+void Error_Handler(void)
+{
+	/* USER CODE BEGIN Error_Handler_Debug */
+	/* User can add his own implementation to report the HAL error return state */
+	__disable_irq();
+	while (1)
+	{
+	}
+	/* USER CODE END Error_Handler_Debug */
+}
 
 #ifdef USE_FULL_ASSERT
-	/**
-	 * @brief  Reports the name of the source file and the source line number
-	 *         where the assert_param error has occurred.
-	 * @param  file: pointer to the source file name
-	 * @param  line: assert_param error line source number
-	 * @retval None
-	 */
-	void assert_failed(uint8_t *file, uint32_t line)
-	{
-		/* USER CODE BEGIN 6 */
-		/* User can add his own implementation to report the file name and line number,
-		   ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-		/* USER CODE END 6 */
-	}
+/**
+ * @brief  Reports the name of the source file and the source line number
+ *         where the assert_param error has occurred.
+ * @param  file: pointer to the source file name
+ * @param  line: assert_param error line source number
+ * @retval None
+ */
+void assert_failed(uint8_t *file, uint32_t line)
+{
+	/* USER CODE BEGIN 6 */
+	/* User can add his own implementation to report the file name and line number,
+	   ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+	/* USER CODE END 6 */
+}
 #endif /* USE_FULL_ASSERT */
