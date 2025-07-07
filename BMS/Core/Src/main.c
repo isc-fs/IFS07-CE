@@ -150,7 +150,7 @@ void SPIRead(SPI_HandleTypeDef *hspi, uint8_t cmd, uint8_t numRegisters,
 			 uint8_t *const buff);
 void waitForADCComplete(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port, uint16_t cs_pin);
 bool readCellValues(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port, uint16_t cs_pin, uint8_t *buff);
-void decodeCellVoltages(const uint8_t *cellBytes, float *voltages_mV);
+void decodeCellVoltages(const uint8_t *cellBytes, float *voltages_mV, int offset, float shuntVoltage, uint16_t *shuntBits)
 uint8_t calculatePEC(uint8_t *data, uint8_t len);
 void RunSelfTest(uint8_t *cellBytes1, uint8_t *cellBytes2, uint8_t testCommand);
 /* USER CODE END PFP */
@@ -321,7 +321,7 @@ int main(void)
 		// Read cell voltage registers HV-
 		if (readCellValues(&hspi1, LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN, 0, cellBytes1))
 		{
-			decodeCellVoltages(cellBytes1, voltages);
+			decodeCellVoltages(cellBytes1, voltages, 0, shuntVoltage, &shuntBits);
 
 #endif
 
@@ -1016,21 +1016,49 @@ bool readCellValues(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port, uint16_t cs_
 	return pec_received == pec_calc;
 }
 
-void decodeCellVoltages(const uint8_t *cellBytes, float *voltages_mV)
+void decodeCellVoltages(const uint8_t *cellBytes,
+                        float *voltages_mV,
+                        int offset,
+                        float shuntVoltage,
+                        uint16_t *shuntBits)
 {
-	for (int i = 0; i < 6; i++)
-	{
-		int idx = i * 3;
+    int correction = (offset == 0) ? LOW_LTC_CORRECTION : HIGH_LTC_CORRECTION;
 
-		uint16_t adc1 = cellBytes[idx] + ((cellBytes[idx + 1] & 0x0F) << 8);
-		uint16_t adc2 = ((cellBytes[idx + 1] >> 4) & 0x0F) + (cellBytes[idx + 2] << 4);
+    for (int i = 0; i < 6; i++)
+    {
+        int idx = i * 3;
 
-		float v1 = adc1 * 1.5f;
-		float v2 = adc2 * 1.5f;
+        uint16_t adc1 = cellBytes[idx] + ((cellBytes[idx + 1] & 0x0F) << 8);
+        uint16_t adc2 = ((cellBytes[idx + 1] >> 4) & 0x0F) + (cellBytes[idx + 2] << 4);
 
-		voltages_mV[i * 2] = (v1 <= 5000.0f) ? v1 : 0.0f;
-		voltages_mV[i * 2 + 1] = (v2 <= 5000.0f) ? v2 : 0.0f;
-	}
+        int c1 = offset + i * 2;
+        int c2 = offset + i * 2 + 1;
+
+        float v1 = adc1 * 1.5f;
+        float v2 = adc2 * 1.5f;
+
+        if (v1 > 0) {
+            v1 += correction;
+            if (c1 == 0 || c1 == 12) v1 -= correction / 2.0f;
+        }
+        if (v2 > 0) {
+            v2 += correction;
+            if (c2 == 0 || c2 == 12) v2 -= correction / 2.0f;
+        }
+
+        voltages_mV[c1] = (v1 <= 5000.0f) ? v1 : 0.0f;
+        voltages_mV[c2] = (v2 <= 5000.0f) ? v2 : 0.0f;
+
+        if (v1 > shuntVoltage && shuntVoltage > 0)
+            *shuntBits |= (1 << c1);
+        else
+            *shuntBits &= ~(1 << c1);
+
+        if (v2 > shuntVoltage && shuntVoltage > 0)
+            *shuntBits |= (1 << c2);
+        else
+            *shuntBits &= ~(1 << c2);
+    }
 }
 
 uint8_t calculatePEC(uint8_t *data, uint8_t len)
