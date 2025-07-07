@@ -148,8 +148,7 @@ void SPIWrite(SPI_HandleTypeDef *hspi, uint8_t data);
 void SPIRead(SPI_HandleTypeDef *hspi, uint8_t cmd, uint8_t numRegisters,
 			 uint8_t *const buff);
 void waitForADCComplete(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port, uint16_t cs_pin);
-void readCellValues(SPI_HandleTypeDef *hspi, uint8_t cmd, uint8_t numRegisters,
-					uint8_t *const buff);
+bool readCellValues(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port, uint16_t cs_pin, uint8_t *buff)
 uint8_t calculatePEC(uint8_t *data, uint8_t len);
 void RunSelfTest(uint8_t *cellBytes1, uint8_t *cellBytes2, uint8_t testCommand);
 /* USER CODE END PFP */
@@ -1046,14 +1045,28 @@ void waitForADCComplete(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port, uint16_t
 }
 
 
-void readCellValues(SPI_HandleTypeDef *hspi, uint8_t cmd, uint8_t numRegisters,
+/*void readCellValues(SPI_HandleTypeDef *hspi, uint8_t cmd, uint8_t numRegisters,
 					uint8_t *const buff)
 {
 	do
 	{
 		SPIRead(hspi, cmd, numRegisters, buff);
 	} while (buff[0] == 0xff);
+}*/
+
+bool readCellValues(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port, uint16_t cs_pin, uint8_t *buff) {
+    uint8_t tx[2] = { 0x80, RDCV }; // Address + command 
+    HHAL_GPIO_WritePin(cs_port, cs_pin, GPIO_PIN_RESET);
+    HAL_SPI_Transmit(hspi, tx, 2, HAL_MAX_DELAY);
+    HAL_SPI_Receive(hspi, buff, 19, HAL_MAX_DELAY);
+    HAL_GPIO_WritePin(cs_port, cs_pin, GPIO_PIN_SET);
+
+    uint8_t pec_received = buff[18];
+    uint8_t pec_calc = calculatePEC(buff, 18);
+
+    return pec_received == pec_calc;
 }
+
 
 uint8_t calculatePEC(uint8_t *data, uint8_t len)
 {
