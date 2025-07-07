@@ -282,17 +282,6 @@ int main(void) {
 		HAL_SPI_Transmit(&hspi1, tx, 2, HAL_MAX_DELAY);
 		HAL_SPI_Transmit(&hspi1, wrbuf, 6, HAL_MAX_DELAY);
 
-		/* Expanded
-
-		 SPIWrite(&hspi1, 0x80); // LTC address
-		 SPIWrite(&hspi1, WRCFG);
-		 SPIWrite(&hspi1, 0b00000001);
-		 SPIWrite(&hspi1, ((unsigned short)(shuntBitsL & 0x00FF)));
-		 SPIWrite(&hspi1, ((unsigned short)(shuntBitsL >> 8)));
-		 SPIWrite(&hspi1, 0b00000000); // LTC6802-2 in HV- measures 9 cells, so cells from 10 to 12 are masked
-		 SPIWrite(&hspi1, 0b00000000);
-		 SPIWrite(&hspi1, 0b00000000);*/
-
 		HAL_GPIO_WritePin(LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN,
 				GPIO_PIN_SET);
 
