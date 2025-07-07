@@ -1,3 +1,4 @@
+"./Core/Src/LTC6802-2.o"
 "./Core/Src/OneWire.o"
 "./Core/Src/ds18b20.o"
 "./Core/Src/main.o"
