@@ -59,7 +59,7 @@ uint8_t errorLTC2 = 0;
 
 #define cellRegisters 19
 
-#define maxCells 12
+#define maxCells 24
 #define maxTemps 38
 
 #define COMMS_TIMEOUT 16
@@ -122,7 +122,7 @@ int data_counter = 0;
 uint32_t commsTimer = 0;
 
 float temp[maxTemps];	  // In deg C
-int voltages[maxCells]; // In millivolts
+uint16_t voltages[maxCells]; // In millivolts
 
 volatile uint16_t shuntVoltage; // In millivolts
 uint32_t shuntBits;
@@ -147,11 +147,11 @@ void waitForADCComplete(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port,
 		uint16_t cs_pin);
 bool readCellValues(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port,
 		uint16_t cs_pin, uint8_t *buff);
-void decodeCellVoltages(const uint8_t *cellBytes, float *voltages_mV,
+void decodeCellVoltages(const uint8_t *cellBytes, uint16_t *voltages_mV,
 		int offset, float shuntVoltage, uint32_t *shuntBits);
-void updateLEDStatus(const float *voltages, int num_cells, uint16_t shuntBits,
+void updateLEDStatus(uint16_t *voltages, int num_cells, uint16_t shuntBits,
 		uint8_t slowCounter, uint32_t commsTimer, uint32_t comms_timeout,
-		float shuntVoltage);
+		uint16_t shuntVoltage);
 uint8_t calculatePEC(uint8_t *data, uint8_t len);
 void RunSelfTest(uint8_t *cellBytes1, uint8_t *cellBytes2, uint8_t testCommand);
 void configureLTC(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port,
@@ -287,11 +287,11 @@ int main(void) {
 		// Read cell voltage registers HV-
 		if (readCellValues(&hspi1, LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN,
 				cellBytes1)) {
-			decodeCellVoltages(cellBytes1, (float*) voltages, 0, shuntVoltage,
+			decodeCellVoltages(cellBytes1, voltages, 0, shuntVoltage,
 					&shuntBits);
 
 		if (readCellValues(&hspi2, LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN, cellBytes2)) {
-			decodeCellVoltages(cellBytes2, (float*) voltages, 12, shuntVoltage,
+			decodeCellVoltages(cellBytes2, voltages, 12, shuntVoltage,
 					&shuntBits);
 		}
 
@@ -317,7 +317,7 @@ int main(void) {
 				counter = 0;
 				slowCounter = (slowCounter + 1) % 4;
 
-				updateLEDStatus((float*) voltages, maxCells, shuntBits,
+				updateLEDStatus(voltages, maxCells, shuntBits,
 						slowCounter, commsTimer, COMMS_TIMEOUT, shuntVoltage);
 			}
 
@@ -342,8 +342,9 @@ int main(void) {
 				// Voltage packets
 				for (int packet = 0; packet < 3; packet++) {
 					for (int n = 0; n < 4; n++) {
-						txData[n * 2] = voltages[packet * 4 + n] >> 8;
-						txData[n * 2 + 1] = voltages[packet * 4 + n] & 0xFF;
+						uint16_t voltageInt = (uint16_t)(voltages[packet * 4 + n]);
+						txData[n * 2] = voltageInt >> 8;
+						txData[n * 2 + 1] = voltageInt & 0xFF;
 					}
 
 					txHeader.DLC = 8;
@@ -364,9 +365,9 @@ int main(void) {
 
 				for (int packet = 0; packet < 3; packet++) {
 					for (int n = 0; n < 4; n++) {
-						txData[n * 2] = voltages[12 + packet * 4 + n] >> 8;	// Top 8 bits
-						txData[n * 2 + 1] = voltages[12 + packet * 4 + n]
-								& 0xFF; // Bottom 8 bits
+						uint16_t voltageInt = (uint16_t)(voltages[12 + packet * 4 + n]);
+						txData[n * 2] = voltageInt >> 8;
+						txData[n * 2 + 1] = voltageInt & 0xFF;
 					}
 
 					txHeader.DLC = 8;
@@ -912,7 +913,7 @@ bool readCellValues(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port,
 	return pec_received == pec_calc;
 }
 
-void decodeCellVoltages(const uint8_t *cellBytes, float *voltages_mV,
+void decodeCellVoltages(const uint8_t *cellBytes, uint16_t *voltages_mV,
 		int offset, float shuntVoltage, uint32_t *shuntBits) {
 	int correction = (offset == 0) ? LOW_LTC_CORRECTION : HIGH_LTC_CORRECTION;
 
@@ -992,13 +993,13 @@ void RunSelfTest(uint8_t *cellBytes1, uint8_t *cellBytes2, uint8_t testCommand) 
 			cellBytes2);
 }
 
-void updateLEDStatus(const float *voltages, int num_cells, uint16_t shuntBits,
+void updateLEDStatus(uint16_t *voltages, int num_cells, uint16_t shuntBits,
 		uint8_t slowCounter, uint32_t commsTimer, uint32_t comms_timeout,
-		float shuntVoltage) {
+		uint16_t shuntVoltage) {
 	char notAllZeroVolts = false;
 
 	for (int n = 0; n < num_cells; n++) {
-		if (voltages[n] > 0.0f)
+		if (voltages[n] > 0)
 			notAllZeroVolts = true;
 	}
 
