@@ -47,8 +47,6 @@ enum {
 #define true 1
 #define false 0
 
-
-
 uint8_t errorLTC1 = 0;
 uint8_t errorLTC2 = 0;
 
@@ -149,12 +147,17 @@ void waitForADCComplete(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port,
 		uint16_t cs_pin);
 bool readCellValues(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port,
 		uint16_t cs_pin, uint8_t *buff);
-void decodeCellVoltages(const uint8_t *cellBytes, float *voltages_mV, int offset, float shuntVoltage, uint32_t *shuntBits);
-void updateLEDStatus(const float *voltages, int num_cells, uint16_t shuntBits, uint8_t slowCounter, uint32_t commsTimer, uint32_t comms_timeout, float shuntVoltage);
+void decodeCellVoltages(const uint8_t *cellBytes, float *voltages_mV,
+		int offset, float shuntVoltage, uint32_t *shuntBits);
+void updateLEDStatus(const float *voltages, int num_cells, uint16_t shuntBits,
+		uint8_t slowCounter, uint32_t commsTimer, uint32_t comms_timeout,
+		float shuntVoltage);
 uint8_t calculatePEC(uint8_t *data, uint8_t len);
 void RunSelfTest(uint8_t *cellBytes1, uint8_t *cellBytes2, uint8_t testCommand);
-void configureLTC(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port, uint16_t cs_pin, uint32_t shuntBits);
-void startConversion(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port, uint16_t cs_pin);
+void configureLTC(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port,
+		uint16_t cs_pin, uint32_t shuntBits);
+void startConversion(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port,
+		uint16_t cs_pin);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -268,15 +271,29 @@ int main(void) {
 #if !TEMPS
 		// Configure LTC6802 1 (HV-)
 
-		configureLTC(&hspi1, LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN, shuntBitsL);
+		configureLTC(&hspi1, LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN,
+				shuntBitsL);
+		configureLTC(&hspi2, LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN,
+				shuntBitsH);
 
 		// Start voltage sampling
 		startConversion(&hspi1, LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN);
+		startConversion(&hspi2, LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN);
+
+		// Wait for ADC conversion
+		waitForADCComplete(&hspi1, LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN);
+		waitForADCComplete(&hspi2, LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN);
 
 		// Read cell voltage registers HV-
 		if (readCellValues(&hspi1, LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN,
 				cellBytes1)) {
-			decodeCellVoltages(cellBytes1, (float *) voltages, 0, shuntVoltage, &shuntBits);
+			decodeCellVoltages(cellBytes1, (float*) voltages, 0, shuntVoltage,
+					&shuntBits);
+
+		if (readCellValues(&hspi2, LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN, cellBytes2)) {
+			decodeCellVoltages(cellBytes2, (float*) voltages, 12, shuntVoltage,
+					&shuntBits);
+		}
 
 #endif
 
@@ -300,8 +317,8 @@ int main(void) {
 				counter = 0;
 				slowCounter = (slowCounter + 1) % 4;
 
-				updateLEDStatus((float *) voltages, maxCells, shuntBits, slowCounter,
-						commsTimer, COMMS_TIMEOUT, shuntVoltage);
+				updateLEDStatus((float*) voltages, maxCells, shuntBits,
+						slowCounter, commsTimer, COMMS_TIMEOUT, shuntVoltage);
 			}
 
 			// ds18b20_flag = TM_OneWire_Reset(&OneWire1);
@@ -952,80 +969,79 @@ uint8_t calculatePEC(uint8_t *data, uint8_t len) {
 	return crc;
 }
 
-void RunSelfTest(uint8_t *cellBytes1, uint8_t *cellBytes2, uint8_t testCommand)
-{
+void RunSelfTest(uint8_t *cellBytes1, uint8_t *cellBytes2, uint8_t testCommand) {
 	// Enviar comando de Self Test
-	HAL_GPIO_WritePin(LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN,
+			GPIO_PIN_RESET);
 	SPIWrite(&hspi1, testCommand);
-	HAL_GPIO_WritePin(LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN,
+			GPIO_PIN_SET);
 
-	HAL_GPIO_WritePin(LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN,
+			GPIO_PIN_RESET);
 	SPIWrite(&hspi2, testCommand);
-	HAL_GPIO_WritePin(LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN,
+			GPIO_PIN_SET);
 
 	HAL_Delay(20);
 
 	// Leer registros de celdas
-	readCellValues(&hspi1, LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN, cellBytes1);
-	readCellValues(&hspi2, LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN, cellBytes2);
+	readCellValues(&hspi1, LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN,
+			cellBytes1);
+	readCellValues(&hspi2, LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN,
+			cellBytes2);
 }
 
-void updateLEDStatus(const float *voltages, int num_cells, uint16_t shuntBits, uint8_t slowCounter, uint32_t commsTimer, uint32_t comms_timeout, float shuntVoltage)
-{
+void updateLEDStatus(const float *voltages, int num_cells, uint16_t shuntBits,
+		uint8_t slowCounter, uint32_t commsTimer, uint32_t comms_timeout,
+		float shuntVoltage) {
 	char notAllZeroVolts = false;
 
-	for (int n = 0; n < num_cells; n++)
-	{
+	for (int n = 0; n < num_cells; n++) {
 		if (voltages[n] > 0.0f)
-		notAllZeroVolts = true;
+			notAllZeroVolts = true;
 	}
 
 	// LEDs default: Green ON, Red OFF
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);// Green ON
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_RESET);// Red OFF
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET); // Green ON
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_RESET); // Red OFF
 
-	if ((shuntBits != 0) && (slowCounter & 0x01))
-	{
+	if ((shuntBits != 0) && (slowCounter & 0x01)) {
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_SET); // Red blinking - balancing
-	}
-	else if (!notAllZeroVolts)
-	{
+	} else if (!notAllZeroVolts) {
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET); // Green OFF
 		if (slowCounter & 0x01)
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_SET);// Red blinking - no cells
-	}
-	else if ((commsTimer == COMMS_TIMEOUT) && (slowCounter & 0x01))
-	{
+			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_SET); // Red blinking - no cells
+	} else if ((commsTimer == COMMS_TIMEOUT) && (slowCounter & 0x01)) {
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET); // Green blinkng - no CAN comunication
 	}
 }
 
-void configureLTC(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port, uint16_t cs_pin, uint32_t shuntBits)
-{
-    uint8_t wrbuf[6] = {
-        0x01,                           // CFGR0 (normal mode, reference ON)
-        (uint8_t)(shuntBits & 0xFF),   // CFGR1 (lower 8 bits of balance config)
-        (uint8_t)(shuntBits >> 8),     // CFGR2 (upper 4 bits if needed)
-        0x00,                           // CFGR3 (no cell masking)
-        0x00,                           // CFGR4 (VUV threshold, unused here)
-        0x00                            // CFGR5 (VOV threshold, unused here)
-    };
+void configureLTC(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port,
+		uint16_t cs_pin, uint32_t shuntBits) {
+	uint8_t wrbuf[6] = { 0x01,              // CFGR0 (normal mode, reference ON)
+			(uint8_t) (shuntBits & 0xFF), // CFGR1 (lower 8 bits of balance config)
+			(uint8_t) (shuntBits >> 8),     // CFGR2 (upper 4 bits if needed)
+			0x00,                           // CFGR3 (no cell masking)
+			0x00,                          // CFGR4 (VUV threshold, unused here)
+			0x00                          // CFGR5 (VOV threshold, unused here)
+			};
 
-    uint8_t tx[2] = { 0x80, WRCFG };   // Broadcast address + WRCFG command
+	uint8_t tx[2] = { 0x80, WRCFG };   // Broadcast address + WRCFG command
 
-    HAL_GPIO_WritePin(cs_port, cs_pin, GPIO_PIN_RESET);
-    HAL_SPI_Transmit(hspi, tx, 2, HAL_MAX_DELAY);
-    HAL_SPI_Transmit(hspi, wrbuf, 6, HAL_MAX_DELAY);
-    HAL_GPIO_WritePin(cs_port, cs_pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(cs_port, cs_pin, GPIO_PIN_RESET);
+	HAL_SPI_Transmit(hspi, tx, 2, HAL_MAX_DELAY);
+	HAL_SPI_Transmit(hspi, wrbuf, 6, HAL_MAX_DELAY);
+	HAL_GPIO_WritePin(cs_port, cs_pin, GPIO_PIN_SET);
 
-    HAL_Delay(5); // Espera tras escritura, si necesario
+	HAL_Delay(5); // Espera tras escritura, si necesario
 }
 
-void startConversion(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port, uint16_t cs_pin)
-{
-    HAL_GPIO_WritePin(cs_port, cs_pin, GPIO_PIN_RESET);
-    SPIWrite(hspi, STCVAD); // Start cell voltage ADC
-    HAL_GPIO_WritePin(cs_port, cs_pin, GPIO_PIN_SET);
+void startConversion(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port,
+		uint16_t cs_pin) {
+	HAL_GPIO_WritePin(cs_port, cs_pin, GPIO_PIN_RESET);
+	SPIWrite(hspi, STCVAD); // Start cell voltage ADC
+	HAL_GPIO_WritePin(cs_port, cs_pin, GPIO_PIN_SET);
 }
 
 /* USER CODE END 4 */
