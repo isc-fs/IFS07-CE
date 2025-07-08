@@ -157,7 +157,7 @@ void decodeCellVoltages(const uint8_t *cellBytes, uint16_t *voltages_mV,
 void updateLEDStatus(uint16_t *voltages, int num_cells, uint16_t shuntBits,
 					 uint8_t slowCounter, uint32_t commsTimer, uint32_t comms_timeout,
 					 uint16_t shuntVoltage);
-uint8_t calculatePEC(uint8_t *data, uint8_t len);
+static inline uint8_t calculatePEC(const uint8_t *data, uint8_t len);
 void RunSelfTest(uint8_t *cellBytes1, uint8_t *cellBytes2, uint8_t testCommand);
 void configureLTC(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port,
 				  uint16_t cs_pin, uint32_t shuntBits);
@@ -377,7 +377,7 @@ int main(void)
 					Error_Handler();
 				}
 
-				HAL_Delay(1);
+				
 			}
 		}
 		else if (dataRequestedH)
@@ -405,7 +405,7 @@ int main(void)
 					Error_Handler();
 				}
 
-				HAL_Delay(1);
+				
 			}
 		}
 		else if (temperaturesRequested)
@@ -439,7 +439,7 @@ int main(void)
 					Error_Handler();
 				}
 
-				HAL_Delay(1);
+			
 			}
 		}
 		else if (rawValuesRequested)
@@ -465,7 +465,7 @@ int main(void)
 										 &TxMailBox) != HAL_OK)
 					Error_Handler();
 
-				HAL_Delay(1);
+				
 			}
 
 			for (int packet = 0; packet < 3; packet++)
@@ -483,7 +483,7 @@ int main(void)
 										 &TxMailBox) != HAL_OK)
 					Error_Handler();
 
-				HAL_Delay(1);
+				
 			}
 		}
 		else if (selfTestRequested)
@@ -511,7 +511,7 @@ int main(void)
 										 &TxMailBox) != HAL_OK)
 					Error_Handler();
 
-				HAL_Delay(1);
+				
 			}
 
 			for (int packet = 0; packet < 3; packet++)
@@ -529,7 +529,7 @@ int main(void)
 										 &TxMailBox) != HAL_OK)
 					Error_Handler();
 
-				HAL_Delay(1);
+				
 			}
 		}
 		else if (selfTest2Requested)
@@ -557,7 +557,7 @@ int main(void)
 										 &TxMailBox) != HAL_OK)
 					Error_Handler();
 
-				HAL_Delay(1);
+				
 			}
 
 			for (int packet = 0; packet < 3; packet++)
@@ -575,8 +575,7 @@ int main(void)
 										 &TxMailBox) != HAL_OK)
 					Error_Handler();
 
-				HAL_Delay(1);
-			}
+				
 		}
 
 		else
@@ -1041,7 +1040,7 @@ void decodeCellVoltages(const uint8_t *cellBytes, uint16_t *voltages_mV,
 	}
 }
 
-uint8_t calculatePEC(uint8_t *data, uint8_t len)
+static inline uint8_t calculatePEC(const uint8_t *data, uint8_t len)
 {
 	uint8_t crc = 0x00;
 	for (uint8_t i = 0; i < len; i++)
