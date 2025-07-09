@@ -420,7 +420,7 @@ static void MX_FDCAN1_Init(void)
   hfdcan1.Init.AutoRetransmission = DISABLE;
   hfdcan1.Init.TransmitPause = DISABLE;
   hfdcan1.Init.ProtocolException = DISABLE;
-  hfdcan1.Init.NominalPrescaler = 6;
+  hfdcan1.Init.NominalPrescaler = 3;
   hfdcan1.Init.NominalSyncJumpWidth = 1;
   hfdcan1.Init.NominalTimeSeg1 = 10;
   hfdcan1.Init.NominalTimeSeg2 = 5;
@@ -483,7 +483,7 @@ static void MX_FDCAN2_Init(void)
   hfdcan2.Init.AutoRetransmission = DISABLE;
   hfdcan2.Init.TransmitPause = DISABLE;
   hfdcan2.Init.ProtocolException = DISABLE;
-  hfdcan2.Init.NominalPrescaler = 6;
+  hfdcan2.Init.NominalPrescaler = 3;
   hfdcan2.Init.NominalSyncJumpWidth = 1;
   hfdcan2.Init.NominalTimeSeg1 = 10;
   hfdcan2.Init.NominalTimeSeg2 = 5;
@@ -581,8 +581,8 @@ static void MX_USART2_UART_Init(void)
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
-/* USER CODE BEGIN MX_GPIO_Init_1 */
-/* USER CODE END MX_GPIO_Init_1 */
+  /* USER CODE BEGIN MX_GPIO_Init_1 */
+  /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOF_CLK_ENABLE();
@@ -619,8 +619,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
-/* USER CODE BEGIN MX_GPIO_Init_2 */
-/* USER CODE END MX_GPIO_Init_2 */
+  /* USER CODE BEGIN MX_GPIO_Init_2 */
+  /* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
@@ -673,7 +673,7 @@ HAL_StatusTypeDef module_send_message_NoExtId_CAN1(uint32_t id, uint8_t* data, u
 
 HAL_StatusTypeDef module_send_message_CAN2(uint32_t id, uint8_t* data, uint8_t length) {
 	TxHeader_bms.Identifier = id;
-	TxHeader_bms.IdType = FDCAN_EXTENDED_ID;
+	TxHeader_bms.IdType = FDCAN_STANDARD_ID;
 	TxHeader_bms.DataLength = length;
 
 	HAL_StatusTypeDef status = HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, &TxHeader_bms, data);

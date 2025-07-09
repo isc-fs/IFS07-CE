@@ -588,7 +588,7 @@ int main(void)
 					Error_Handler();
 			}
 
-			else
+		}else
 			{
 				HAL_Delay(4);
 			}

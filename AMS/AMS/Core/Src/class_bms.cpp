@@ -55,7 +55,7 @@ void BMS_MOD::voltage_info(char *buffer) {
 		print((char*) "-----------------------");
 		sprintf(buffer, "VOLTS (mV): [%i", cellVoltagemV[0]);
 		printnl(buffer);
-		for (int i = 1; i < NUM_CELLS; i++) {
+		for (int i = 0; i < NUM_CELLS; i++) {
 			sprintf(buffer, ", %i", cellVoltagemV[i]);
 			printnl(buffer);
 		}
@@ -111,82 +111,75 @@ void BMS_MOD::temperature_info(char *buffer) {
  ** Descriptions:            Function for parsing the received data via CAN protocl
  *********************************************************************************************************/
 bool BMS_MOD::parse(uint32_t id, uint8_t *buf, uint32_t t) {
-
 	if (id > CANID && id < CANID + 30) {
 		int m = id % CANID;
 		int pos = 0;
-		if ((m > 0 && m < 5) || (m > 10 && m < 15)) {
-			time_lim_received = t + TIME_LIM_RECV; // Reset the timer flag for checking if the data is received
-			if (m < 14) {
-				if (flag_charger == 1) { // New charger doesn't have CAN bus
-					if (module_send_message_CAN1(id, buf, 8) != HAL_OK)
-						error = BMS_ERROR_COMMUNICATION;
-				}
-				for (int i = 0; i < 14; i++) // i = number of cell within message
-						{
-					pos = (m - 1) * 4 + i;
-					cellVoltagemV[pos] = (buf[2 * i] << 8) + buf[2 * i + 1];
-					if ((cellVoltagemV[pos] > LIMIT_MAX_V
-							|| cellVoltagemV[pos] < LIMIT_MIN_V)
-							&& pos < NUM_CELLS) {
-						flag_error_volt[pos] = flag_error_volt[pos] + 1;
-						if (flag_error_volt[pos] >= max_flag)
-							error = BMS_ERROR_VOLTS;
-					} else
-						flag_error_volt[pos] = 0;
-				}
-				MAX_V = cellVoltagemV[0];
-				MIN_V = cellVoltagemV[0];
-				for (int i = 0; i < NUM_CELLS; i++) // i = number of cell within message
-						{
-					if (cellVoltagemV[i] > MAX_V)
-						MAX_V = cellVoltagemV[i];
-					else if (cellVoltagemV[i] < MIN_V)
-						MIN_V = cellVoltagemV[i];
-				}
-				//message_balancing[1] = BALANCING_V & 0xFF;           // Coment this two lines for disabling the balancing
-				//message_balancing[0] = (BALANCING_V >> 8) & 0xFF;    // Coment this two lines for disabling the balancing
 
-			} else if (m > 20 && m < 27) { //New BMS send temeratures at 21, 22, 23, 24, 25, 26
+		if (m >= 1 && m <= 6) {
+			time_lim_received = t + TIME_LIM_RECV;
 
-				if (flag_charger == 1) {
-					module_send_message_CAN1(id, buf, 8); //Reenviar temperaturas por CAN1 tanto en cargador como en coche
-				}
+			for (int i = 0; i < 4; i++) {
+				pos = (m - 1) * 4 + i;
+				cellVoltagemV[pos] = (buf[2 * i] << 8) | buf[2 * i + 1];
 
-				if (m < 26) {
-					for (int i = 0; i < 8; i++) {
-						pos = (m - 1) * 8 + i;
-						cellTemperature[pos] = buf[i];
-						if (cellTemperature[pos] > LIMIT_MAX_T)
-							error = BMS_ERROR_TEMP;
-
-					}
-				} else if (m == 26) {
-
-					for (int i = 0; i < 3; i++) {
-						pos = (m - 1) * 8 + i;
-						if (cellTemperature[pos] > LIMIT_MAX_T)
-							error = BMS_ERROR_TEMP;
-
-					}
-
-				}
-
-				MAX_T = cellTemperature[0];
-				MIN_T = cellTemperature[0];
-				for (int i = 0; i < 38; i++) {
-					if (cellTemperature[i] > MAX_T)
-						MAX_T = cellTemperature[i];
-					else if (cellTemperature[i] < MIN_T
-							&& cellTemperature[i] != 0) {
-						MIN_T = cellTemperature[i];
-
-					}
-					return true;
+				if ((cellVoltagemV[pos] > LIMIT_MAX_V
+						|| cellVoltagemV[pos] < LIMIT_MIN_V)
+						&& pos < NUM_CELLS) {
+					flag_error_volt[pos]++;
+					if (flag_error_volt[pos] >= max_flag)
+						error = BMS_ERROR_VOLTS;
+				} else {
+					flag_error_volt[pos] = 0;
 				}
 			}
+			MAX_V = cellVoltagemV[0];
+			MIN_V = cellVoltagemV[0];
+			for (int i = 0; i < NUM_CELLS; i++) {
+				if (cellVoltagemV[i] > MAX_V)
+					MAX_V = cellVoltagemV[i];
+				else if (cellVoltagemV[i] < MIN_V)
+					MIN_V = cellVoltagemV[i];
+			}
+
+			return true;
+		}
+		//message_balancing[1] = BALANCING_V & 0xFF;           // Coment this two lines for disabling the balancing
+		//message_balancing[0] = (BALANCING_V >> 8) & 0xFF;    // Coment this two lines for disabling the balancing
+
+		else if (m >= 21 && m <= 26) {
+			if (flag_charger == 1)
+				module_send_message_CAN1(id, buf, 8); // Reenvío por CAN1 si aplica
+
+			if (m < 26) {
+				for (int i = 0; i < 8; i++) {
+					pos = (m - 1) * 8 + i;
+					cellTemperature[pos] = buf[i];
+					if (cellTemperature[pos] > LIMIT_MAX_T)
+						error = BMS_ERROR_TEMP;
+				}
+			} else { // m == 26 → últimos 2–3 sensores
+				for (int i = 0; i < 3; i++) {
+					pos = (m - 1) * 8 + i;
+					cellTemperature[pos] = buf[i];
+					if (cellTemperature[pos] > LIMIT_MAX_T)
+						error = BMS_ERROR_TEMP;
+				}
+			}
+
+			MAX_T = cellTemperature[0];
+			MIN_T = cellTemperature[0];
+			for (int i = 0; i < 38; i++) {
+				if (cellTemperature[i] > MAX_T)
+					MAX_T = cellTemperature[i];
+				else if (cellTemperature[i] < MIN_T && cellTemperature[i] != 0)
+					MIN_T = cellTemperature[i];
+			}
+
+			time_lim_received = t + TIME_LIM_RECV;
+			return true;
 		}
 	}
+
 	return false;
 }
 
@@ -203,24 +196,22 @@ int BMS_MOD::return_error() {
  ** Descriptions:            Function to check if i need to send a message new message and the received messages interval are within the limits
  *********************************************************************************************************/
 int BMS_MOD::query_voltage(uint32_t time, char *buffer) {
-	//INT8U message_balancing[2] = {0,0}; // Voltage in mV
-// Function for performing a correct behavior
-	if (time > time_lim_sended) { // HERE I HAVE TO SEND THE REQUEST MESSAGE FOR THE BMS
+	// Shunt voltage in milivolts
+	uint8_t message_balancing[2] = { 0x00, 0x00 };
+
+	if (time > time_lim_sended) {
 		time_lim_sended += TIME_LIM_SEND;
 
-		// Two messages (one per LTC in the BMS) -> to evaluate if its better to group everything into one message
-		if (module_send_message_CAN2(CANID, message_balancing, 2) != HAL_OK) {
-			//error = BMS_ERROR_COMMUNICATION; // If the message is not sent then, error
-		}
 
-		if (module_send_message_CAN2(CANID + 10, message_balancing, 2)
-				!= HAL_OK) {
-			//error = BMS_ERROR_COMMUNICATION; // If the message is not sent then, error
+		if (module_send_message_CAN2(CANID, message_balancing, 2) != HAL_OK) {
+			//error = BMS_ERROR_COMMUNICATION;
 		}
 	}
+
 	if (time > time_lim_received) {
 		error = BMS_ERROR_COMMUNICATION;
 	}
+
 	if (TIME_LIM_PLOT > 0 && time > time_lim_plotted) {
 		time_lim_plotted += TIME_LIM_PLOT;
 		voltage_info(buffer);
@@ -233,8 +224,6 @@ int BMS_MOD::query_voltage(uint32_t time, char *buffer) {
 }
 
 
-
-
 /*********************************************************************************************************
  ** Function name:           query_temperature
  ** Descriptions:            Function to check if i need to send a message new message and the received messages interval are within the limits
@@ -242,43 +231,43 @@ int BMS_MOD::query_voltage(uint32_t time, char *buffer) {
 
 int BMS_MOD::query_temperature(uint32_t time, char *buffer) {
 // Function for performing a correct behavior
-if (time > time_lim_sended) { // HERE I HAVE TO SEND THE REQUEST MESSAGE FOR THE TEMPERATURES
-	time_lim_sended += TIME_LIM_SEND;
+	if (time > time_lim_sended) { // HERE I HAVE TO SEND THE REQUEST MESSAGE FOR THE TEMPERATURES
+		time_lim_sended += TIME_LIM_SEND;
 
-	if (module_send_message_CAN2(CANID + 20, message_temperatures, 2)
-			!= HAL_OK) {
-		error = BMS_ERROR_TEMP; // If the message is not sended then, error
-	} else {
-		/*       Serial.print("Ennvado solicitud a: ");
-		 Serial.println(MODULEID,HEX); */
-	}
-
-	for (int i = 0; i < 38; i++) {
-		if (cellTemperature[i] > 55) {
-			error = 2;
+		if (module_send_message_CAN2(CANID + 20, message_temperatures, 2)
+				!= HAL_OK) {
+			//error = BMS_ERROR_TEMP; // If the message is not sended then, error
+		} else {
+			/*       Serial.print("Ennvado solicitud a: ");
+			 Serial.println(MODULEID,HEX); */
 		}
+
+		for (int i = 0; i < 38; i++) {
+			if (cellTemperature[i] > 55) {
+				error = 2;
+			}
+		}
+
+// time_lim_sended += TIME_LIM_SEND; //Si actualizas dos veces, el mensaje se envía en la mitad del periodo
+	}
+	if (time > time_lim_received) {
+//error = Temperatures_ERROR_COMMUNICATION;
+	}
+	if (TIME_LIM_PLOT > 0 && time > time_lim_plotted) {
+		time_lim_plotted += TIME_LIM_PLOT;
+		temperature_info(buffer);
 	}
 
-	// time_lim_sended += TIME_LIM_SEND; //Si actualizas dos veces, el mensaje se envía en la mitad del periodo
-}
-if (time > time_lim_received) {
-	//error = Temperatures_ERROR_COMMUNICATION;
-}
-if (TIME_LIM_PLOT > 0 && time > time_lim_plotted) {
-	time_lim_plotted += TIME_LIM_PLOT;
-	temperature_info(buffer);
-}
+	/*     if(time > time_lim_sended)
+	 {
+	 time_lim_sended += TIME_LIM_SEND;
 
-/*     if(time > time_lim_sended)
- {
- time_lim_sended += TIME_LIM_SEND;
+	 message_temperatures[0] = 0;
+	 message_temperatures[1] = MAX_T & 0xFF;
+	 module_send_message_CAN1(CANIDTEL, 0, 2, message_temperatures);
+	 } */
 
- message_temperatures[0] = 0;
- message_temperatures[1] = MAX_T & 0xFF;
- module_send_message_CAN1(CANIDTEL, 0, 2, message_temperatures);
- } */
-
-return error;
+	return error;
 
 }
 
