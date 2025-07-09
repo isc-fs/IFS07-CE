@@ -113,8 +113,6 @@ uint8_t txData[8] = {0, 0, 0, 0, 0, 0, 0, 0}; // CAN transmit buffer
 
 uint32_t TxMailBox;
 
-volatile uint8_t dataRequestedL = false; // Low group, LTC #2
-volatile uint8_t dataRequestedH = false; // High group, LTC #1
 
 volatile uint8_t voltagesRequested = false;		// Voltages
 volatile uint8_t temperaturesRequested = false; // Temperatures
@@ -376,60 +374,6 @@ int main(void)
 					Error_Handler();
 
 				HAL_Delay(1);
-			}
-		}
-
-		else if (dataRequestedL)
-		{
-			dataRequestedL = false;
-			commsTimer = 0;
-
-			// Voltage packets
-			for (int packet = 0; packet < 3; packet++)
-			{
-				for (int n = 0; n < 4; n++)
-				{
-					uint16_t voltageInt = (uint16_t)(voltages[packet * 4 + n]);
-					txData[n * 2] = voltageInt >> 8;
-					txData[n * 2 + 1] = voltageInt & 0xFF;
-				}
-
-				txHeader.DLC = 8;
-				txHeader.IDE = CAN_ID_STD;
-				txHeader.RTR = CAN_RTR_DATA;
-				txHeader.StdId = moduleID + packet + 1;
-
-				if (HAL_CAN_AddTxMessage(&hcan, &txHeader, txData,
-										 &TxMailBox) != HAL_OK)
-				{
-					Error_Handler();
-				}
-			}
-		}
-		else if (dataRequestedH)
-		{
-			dataRequestedH = false;
-			commsTimer = 0;
-
-			for (int packet = 0; packet < 3; packet++)
-			{
-				for (int n = 0; n < 4; n++)
-				{
-					uint16_t voltageInt = (uint16_t)(voltages[12 + packet * 4 + n]);
-					txData[n * 2] = voltageInt >> 8;
-					txData[n * 2 + 1] = voltageInt & 0xFF;
-				}
-
-				txHeader.DLC = 8;
-				txHeader.IDE = CAN_ID_STD;
-				txHeader.RTR = CAN_RTR_DATA;
-				txHeader.StdId = moduleID + 10 + packet + 1;
-
-				if (HAL_CAN_AddTxMessage(&hcan, &txHeader, txData,
-										 &TxMailBox) != HAL_OK)
-				{
-					Error_Handler();
-				}
 			}
 		}
 		else if (temperaturesRequested)
@@ -874,19 +818,6 @@ int main(void)
 		if (USE_29BIT_IDS)
 		{
 			rxPacketID = rxHeader.ExtId;
-		}
-
-		// Only one packet we care about - the data request
-		if (rxPacketID == moduleID + 1)
-		{
-			shuntVoltage = (rxData[0] << 8) + rxData[1]; // Big endian format (high byte first)
-			dataRequestedL = true;
-		}
-
-		if (rxPacketID == moduleID + 10)
-		{
-			shuntVoltage = (rxData[0] << 8) + rxData[1];
-			dataRequestedH = true;
 		}
 
 		if (rxPacketID == moduleID)
