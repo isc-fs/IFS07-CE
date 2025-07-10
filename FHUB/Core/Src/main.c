@@ -41,6 +41,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
+ADC_HandleTypeDef hadc2;
 
 FDCAN_HandleTypeDef hfdcan1;
 
@@ -53,6 +54,7 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_FDCAN1_Init(void);
+static void MX_ADC2_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -60,7 +62,6 @@ static void MX_FDCAN1_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 FDCAN_TxHeaderTypeDef TxHeader;
-FDCAN_TxHeaderTypeDef RxHeader;
 
 
 uint8_t TxData[8];
@@ -73,6 +74,7 @@ char TxBuffer[250];
 uint8_t error = 0;
 
 void ADC_Select_S1 ();
+void ADC_Select_SFL ();
 void ADC_Select_S2 ();
 
 /* USER CODE END 0 */
@@ -108,11 +110,20 @@ int main(void)
   MX_GPIO_Init();
   MX_ADC1_Init();
   MX_FDCAN1_Init();
+  MX_ADC2_Init();
   /* USER CODE BEGIN 2 */
 
 	if (HAL_FDCAN_Start(&hfdcan1) != HAL_OK) {
 		Error_Handler();
 	}
+
+	/*if (HAL_ADC_Start(&hadc1) != HAL_OK){
+		Error_Handler();
+	}*/
+
+	//HAL_ADC_Start(&hadc1);
+	//ADC_Select_S1();
+	//ADC_Select_S2();
 
   /* USER CODE END 2 */
 
@@ -123,32 +134,30 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-		ADC_Select_S1();
-		HAL_ADC_Start(&hadc1);
-		HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-		s1_aceleracion = HAL_ADC_GetValue(&hadc1);
-		HAL_ADC_Stop(&hadc1);
-		HAL_Delay(1);
 
-		ADC_Select_S2();
 		HAL_ADC_Start(&hadc1);
-		HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-		s2_aceleracion = HAL_ADC_GetValue(&hadc1);
+		s1_aceleracion = HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
 		HAL_ADC_Stop(&hadc1);
-		HAL_Delay(1);
+		HAL_Delay(10);
+
+		HAL_ADC_Start(&hadc2);
+		HAL_ADC_PollForConversion(&hadc2, HAL_MAX_DELAY);
+		s2_aceleracion = HAL_ADC_GetValue(&hadc2);
+		HAL_ADC_Stop(&hadc2);
+		HAL_Delay(10);
 
 		TxHeader.Identifier = 0x100;
-		TxHeader.DataLength = 6;
+		TxHeader.DataLength = 4;
 		TxHeader.IdType = FDCAN_STANDARD_ID;
 		TxHeader.FDFormat = FDCAN_CLASSIC_CAN;
 		TxHeader.TxFrameType = FDCAN_DATA_FRAME;
 
-		TxData[0] = (s1_aceleracion >> 16) & 0xFF; // S APPS 1
-		TxData[1] = (s1_aceleracion >> 8) & 0xFF;
-		TxData[2] = s1_aceleracion & 0xFF;
-		TxData[3] = (s2_aceleracion >> 16) & 0xFF; // S APPS 2
-		TxData[4] = (s2_aceleracion >> 8) & 0xFF;
-		TxData[5] = s2_aceleracion & 0xFF;
+		TxData[0] = (s1_aceleracion >> 8) & 0xFF; // Los 4 bits más significativos
+		TxData[1] = s1_aceleracion & 0xFF;        // Los 8 bits menos significativos
+
+		TxData[2] = (s2_aceleracion >> 8) & 0xFF; // Los 4 bits más significativos
+		TxData[3] = s2_aceleracion & 0xFF;        // Los 8 bits menos significativos
+
 
 		if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader, TxData) == HAL_OK) {
 			//print("Valor de sensor de aceleración enviado\n\r");
@@ -277,6 +286,65 @@ static void MX_ADC1_Init(void)
 }
 
 /**
+  * @brief ADC2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_ADC2_Init(void)
+{
+
+  /* USER CODE BEGIN ADC2_Init 0 */
+
+  /* USER CODE END ADC2_Init 0 */
+
+  ADC_ChannelConfTypeDef sConfig = {0};
+
+  /* USER CODE BEGIN ADC2_Init 1 */
+
+  /* USER CODE END ADC2_Init 1 */
+
+  /** Common config
+  */
+  hadc2.Instance = ADC2;
+  hadc2.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
+  hadc2.Init.Resolution = ADC_RESOLUTION_12B;
+  hadc2.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  hadc2.Init.ScanConvMode = ADC_SCAN_DISABLE;
+  hadc2.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  hadc2.Init.LowPowerAutoWait = DISABLE;
+  hadc2.Init.ContinuousConvMode = DISABLE;
+  hadc2.Init.NbrOfConversion = 1;
+  hadc2.Init.DiscontinuousConvMode = DISABLE;
+  hadc2.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadc2.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc2.Init.DMAContinuousRequests = DISABLE;
+  hadc2.Init.SamplingMode = ADC_SAMPLING_MODE_NORMAL;
+  hadc2.Init.Overrun = ADC_OVR_DATA_PRESERVED;
+  hadc2.Init.OversamplingMode = DISABLE;
+  if (HAL_ADC_Init(&hadc2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_15;
+  sConfig.Rank = ADC_REGULAR_RANK_1;
+  sConfig.SamplingTime = ADC_SAMPLETIME_2CYCLES_5;
+  sConfig.SingleDiff = ADC_SINGLE_ENDED;
+  sConfig.OffsetNumber = ADC_OFFSET_NONE;
+  sConfig.Offset = 0;
+  if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN ADC2_Init 2 */
+
+  /* USER CODE END ADC2_Init 2 */
+
+}
+
+/**
   * @brief FDCAN1 Initialization Function
   * @param None
   * @retval None
@@ -298,10 +366,10 @@ static void MX_FDCAN1_Init(void)
   hfdcan1.Init.AutoRetransmission = DISABLE;
   hfdcan1.Init.TransmitPause = DISABLE;
   hfdcan1.Init.ProtocolException = DISABLE;
-  hfdcan1.Init.NominalPrescaler = 4;
+  hfdcan1.Init.NominalPrescaler = 43;
   hfdcan1.Init.NominalSyncJumpWidth = 1;
-  hfdcan1.Init.NominalTimeSeg1 = 28;
-  hfdcan1.Init.NominalTimeSeg2 = 14;
+  hfdcan1.Init.NominalTimeSeg1 = 1;
+  hfdcan1.Init.NominalTimeSeg2 = 2;
   hfdcan1.Init.DataPrescaler = 1;
   hfdcan1.Init.DataSyncJumpWidth = 1;
   hfdcan1.Init.DataTimeSeg1 = 1;
@@ -355,7 +423,24 @@ void ADC_Select_S1 (void)
 	ADC_ChannelConfTypeDef sConfig = {0};
 	  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
 	  */
-	  sConfig.Channel = ADC_CHANNEL_7;
+	  sConfig.Channel = ADC_CHANNEL_14;
+	  sConfig.Rank = ADC_REGULAR_RANK_1;
+	  sConfig.SamplingTime = ADC_SAMPLETIME_2CYCLES_5;
+	  sConfig.SingleDiff = ADC_SINGLE_ENDED;
+	  sConfig.OffsetNumber = ADC_OFFSET_NONE;
+	  sConfig.Offset = 0;
+	  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+	  {
+	    Error_Handler();
+	  }
+}
+
+void ADC_Select_SFL (void)
+{
+	ADC_ChannelConfTypeDef sConfig = {0};
+	  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+	  */
+	  sConfig.Channel = ADC_CHANNEL_1;
 	  sConfig.Rank = ADC_REGULAR_RANK_1;
 	  sConfig.SamplingTime = ADC_SAMPLETIME_2CYCLES_5;
 	  sConfig.SingleDiff = ADC_SINGLE_ENDED;
@@ -372,13 +457,13 @@ void ADC_Select_S2 (void)
 	ADC_ChannelConfTypeDef sConfig = {0};
 	  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
 	  */
-	  sConfig.Channel = ADC_CHANNEL_8;
+	  sConfig.Channel = ADC_CHANNEL_15;
 	  sConfig.Rank = ADC_REGULAR_RANK_1;
 	  sConfig.SamplingTime = ADC_SAMPLETIME_2CYCLES_5;
 	  sConfig.SingleDiff = ADC_SINGLE_ENDED;
 	  sConfig.OffsetNumber = ADC_OFFSET_NONE;
 	  sConfig.Offset = 0;
-	  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+	  if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK)
 	  {
 	    Error_Handler();
 	  }
