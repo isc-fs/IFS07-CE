@@ -380,6 +380,10 @@ int main(void)
 			print("CAN_ACU: Precarga correcta");
 #endif
 		}
+		// VSV
+		if(inv_dc_bus_voltage > 330) {
+			precarga_inv = 1;
+		}
 	}
 
 #if DEBUG
@@ -407,6 +411,7 @@ int main(void)
 
 #if !CALIBRATION
 	// Espera a que se pulse el botón de arranque mientras se pisa el freno
+	boton_arranque = 1; // VSV
 	while (boton_arranque == 0)
 	{
 
@@ -1359,7 +1364,7 @@ uint16_t setTorque()
 #endif
 
 	// Calculamos % torque  en función de la posición de los sensores
-	s1_aceleracion_aux = (s1_aceleracion_filtr - 1886) / (29.4 - 18.86);
+	s1_aceleracion_aux = (s1_aceleracion_filtr - 1500) / 3;
 	if (s1_aceleracion_aux < 0)
 	{
 		s1_aceleracion_aux = 0;
@@ -1369,7 +1374,7 @@ uint16_t setTorque()
 		s1_aceleracion_aux = 100;
 	}
 
-	s2_aceleracion_aux = (s2_aceleracion_filtr - 1780) / (25.27 - 17.8);
+	s2_aceleracion_aux = (s2_aceleracion_filtr - 1500) / 3;
 	if (s2_aceleracion_aux < 0)
 	{
 		s2_aceleracion_aux = 0;
