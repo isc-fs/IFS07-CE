@@ -1,4 +1,4 @@
-/* USER CODE BEGIN Header */
+ /* USER CODE BEGIN Header */
 /**
  ******************************************************************************
  * @file           : main.c
@@ -122,15 +122,15 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
 	// Start precharge (PRECH = 1)
-	HAL_GPIO_WritePin(CHARGE_GPIO_Port, CHARGE_Pin, GPIO_PIN_SET); // DISCHARGE on
 
-	HAL_GPIO_WritePin(PRECH_GPIO_Port, PRECH_Pin, GPIO_PIN_SET);
 
-	HAL_Delay(3000);  // Wait 3 seconds
+	HAL_GPIO_WritePin(PRECH_GPIO_Port, PRECH_Pin, GPIO_PIN_RESET);
 
 	//Stop precharge and enable discharge (PRECH = 0, DISCHARGE = 1)
 
-	HAL_GPIO_WritePin(DISCHARGE_GPIO_Port, DISCHARGE_Pin, GPIO_PIN_SET); // DISCHARGE on
+	HAL_GPIO_WritePin(DISCHARGE_GPIO_Port, DISCHARGE_Pin, GPIO_PIN_SET);
+
+	HAL_GPIO_WritePin(CHARGE_GPIO_Port, CHARGE_Pin, GPIO_PIN_RESET);
 
 	//HAL_GPIO_WritePin(PRECH_GPIO_Port, PRECH_Pin, GPIO_PIN_RESET);  // PRECH off
 
@@ -140,19 +140,25 @@ int main(void)
   /* USER CODE BEGIN WHILE */
 	while (1) {
 
-        bms_state_machine();
+        //bms_state_machine();
 
         // For testing: toggle flags every 3 seconds
-        HAL_Delay(3000);
-        chg_allowed = !chg_allowed;
-        dis_allowed = !dis_allowed;
 
-		/*led_green(true);
+        /*HAL_Delay(3000);
+        chg_allowed = !chg_allowed;
+        dis_allowed = !dis_allowed;*/
+
+
+		led_green(true);
 		led_red(false);
 		HAL_Delay(1000);
 		led_green(false);
 		led_red(true);
-		HAL_Delay(2000);*/
+		HAL_Delay(2000);
+
+
+
+
 
     /* USER CODE END WHILE */
 
