@@ -32,6 +32,7 @@ BMS_MOD::BMS_MOD(uint32_t _ID, int _MAXV, int _MINV, int _MAXT,
 	time_lim_plotted += _LAG;
 	time_lim_sended += _LAG;
 	time_lim_received += _LAG;
+
 }
 
 /*********************************************************************************************************
@@ -108,18 +109,20 @@ void BMS_MOD::temperature_info(char *buffer) {
 
 /*********************************************************************************************************
  ** Function name:           parse
- ** Descriptions:            Function for parsing the received data via CAN protocl
+ ** Descriptions:            Function for parsing the received data via CAN protocol
  *********************************************************************************************************/
 bool BMS_MOD::parse(uint32_t id, uint8_t *buf, uint32_t t) {
 	if (id > CANID && id < CANID + 30) {
 		int m = id % CANID;
 		int pos = 0;
-
-		if (m >= 1 && m <= 6) {
+		if (m >= 1 && m <= 5) {
 			time_lim_received = t + TIME_LIM_RECV;
 
 			for (int i = 0; i < 4; i++) {
 				pos = (m - 1) * 4 + i;
+				if (pos >= 19)
+					break;
+
 				cellVoltagemV[pos] = (buf[2 * i] << 8) | buf[2 * i + 1];
 
 				if ((cellVoltagemV[pos] > LIMIT_MAX_V
@@ -132,9 +135,10 @@ bool BMS_MOD::parse(uint32_t id, uint8_t *buf, uint32_t t) {
 					flag_error_volt[pos] = 0;
 				}
 			}
+
 			MAX_V = cellVoltagemV[0];
 			MIN_V = cellVoltagemV[0];
-			for (int i = 0; i < NUM_CELLS; i++) {
+			for (int i = 1; i < 19; i++) {
 				if (cellVoltagemV[i] > MAX_V)
 					MAX_V = cellVoltagemV[i];
 				else if (cellVoltagemV[i] < MIN_V)
@@ -201,11 +205,13 @@ int BMS_MOD::query_voltage(uint32_t time, char *buffer) {
 
 	if (time > time_lim_sended) {
 		time_lim_sended += TIME_LIM_SEND;
-
-
-		if (module_send_message_CAN2(CANID, message_balancing, 2) != HAL_OK) {
-			//error = BMS_ERROR_COMMUNICATION;
+		if (CANID != 0x00) { //It keeps sending 0x00 and dont know where
+			if (module_send_message_CAN2(CANID, message_balancing, 2)
+					!= HAL_OK) {
+				//error = BMS_ERROR_COMMUNICATION;
+			}
 		}
+
 	}
 
 	if (time > time_lim_received) {
@@ -222,7 +228,6 @@ int BMS_MOD::query_voltage(uint32_t time, char *buffer) {
 	}
 	return error;
 }
-
 
 /*********************************************************************************************************
  ** Function name:           query_temperature
@@ -255,7 +260,7 @@ int BMS_MOD::query_temperature(uint32_t time, char *buffer) {
 	}
 	if (TIME_LIM_PLOT > 0 && time > time_lim_plotted) {
 		time_lim_plotted += TIME_LIM_PLOT;
-		temperature_info(buffer);
+		//temperature_info(buffer);
 	}
 
 	/*     if(time > time_lim_sended)

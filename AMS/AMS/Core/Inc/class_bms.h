@@ -15,7 +15,7 @@
 #include "main.h"
 
 #define BMS_OK                    0
-#define Temperatures_OK 0
+#define Temperatures_OK 		  0
 #define BMS_ERROR_COMMUNICATION   1
 #define BMS_ERROR_VOLTS           2
 #define BMS_ERROR_TEMP            3

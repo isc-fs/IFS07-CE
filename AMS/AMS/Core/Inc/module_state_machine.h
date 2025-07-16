@@ -15,7 +15,6 @@
 #include "main.h"
 #include "class_cpu.h"
 #include "class_current.h"
-#include "class_temperatures.h"
 
 // BMS
 #define BMS_ID    0x12C

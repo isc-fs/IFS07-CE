@@ -17,14 +17,13 @@
 // INITIALIZE VARIABLES
 BMS_MOD BMS[] = {
 //New BMS - one per module with voltage and temperature readings
-		BMS_MOD(BMS_ID + 00, BMS_MAXV, BMS_MINV, BMS_MAXT, 24, BMS_SHUNT), // 3+3+3+3
-		BMS_MOD(BMS_ID + 30, BMS_MAXV, BMS_MINV, BMS_MAXT, 24, BMS_SHUNT, 50), // 3+5
-		BMS_MOD(BMS_ID + 60, BMS_MAXV, BMS_MINV, BMS_MAXT, 24, BMS_SHUNT, 100), // 5+5
-		BMS_MOD(BMS_ID + 90, BMS_MAXV, BMS_MINV, BMS_MAXT, 24, BMS_SHUNT, 150), // 5+5
-		BMS_MOD(BMS_ID + 120, BMS_MAXV, BMS_MINV, BMS_MAXT, 24, BMS_SHUNT, 200), // 5+5
+		BMS_MOD(BMS_ID + 00, BMS_MAXV, BMS_MINV, BMS_MAXT, 19, BMS_SHUNT), // 3+3+3+3
+		BMS_MOD(BMS_ID + 30, BMS_MAXV, BMS_MINV, BMS_MAXT, 19, BMS_SHUNT, 50), // 3+5
+		BMS_MOD(BMS_ID + 60, BMS_MAXV, BMS_MINV, BMS_MAXT, 19, BMS_SHUNT, 100), // 5+5
+		BMS_MOD(BMS_ID + 90, BMS_MAXV, BMS_MINV, BMS_MAXT, 19, BMS_SHUNT, 150), // 5+5
+		BMS_MOD(BMS_ID + 120, BMS_MAXV, BMS_MINV, BMS_MAXT, 19, BMS_SHUNT, 200), // 5+5
 		};
 
-//BMS_MOD BMS[] = {BMS_MOD(BMS_ID+60, BMS_MAXV, BMS_MINV,BMS_MAXT,24,BMS_SHUNT,100)};
 
 int BMS_N = 5;
 int MIN_V = 4200;
@@ -96,9 +95,9 @@ void select_state() {
 		if (BMS[i].MIN_V < MIN_V)
 			MIN_V = BMS[i].MIN_V; //Checking the minimun voltage of cell in the whole battery
 
-		if (BMS[i].query_temperature(time, buffer) != Temperatures_OK){
+		//if (BMS[i].query_temperature(time, buffer) != Temperatures_OK){
 			//state = error;
-		}
+		//}
 
 		if (BMS[i].MAX_T > MAX_T)
 			MAX_T = BMS[i].MAX_T;
@@ -156,10 +155,10 @@ void select_state() {
 		state_air_p = 0;
 		state_precharge = 1;
 		CPU.updateState(CPU_PRECHARGE);
-		//if ((((CPU.voltage_acum)/1000) * 0.9 < CPU.DC_BUS)){//&&(CPU.voltage_acum != 0)){
+		if ((((CPU.voltage_acum)/1000) * 0.9 < CPU.DC_BUS) && (CPU.voltage_acum != 0)){
 			state = run; //If DC_BUS voltage is higher than 90% of battery voltage, precharge finish
-		// else if((flag_cpu == CPU_ERROR_COMMUNICATION)&&(flag_charger == 1)) state = error;
-		// else if(flag_current != Current_OK) state = error;
+		}else if((flag_cpu == CPU_ERROR_COMMUNICATION)&&(flag_charger == 1)) state = error;
+		 else if(flag_current != Current_OK) state = error;
 		//}
 		break;
 	case run:
@@ -207,7 +206,7 @@ void select_state() {
 			state_air_p ? GPIO_PIN_SET : GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(RELAY_PRECHARGE_GPIO_Port, RELAY_PRECHARGE_Pin,
 			state_precharge ? GPIO_PIN_SET : GPIO_PIN_RESET);
-	if(1){
+	if(0){
 		printnl((char*)"State: ");
 		printValue(state);
 		printnl((char*)"State AIR+: ");
