@@ -270,10 +270,10 @@ int main(void) {
 #if !TEMPS
 		// Configure LTC6802 1 (HV-)
 
-		configureLTC(&hspi1, LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN, shuntBitsL,
-				9);  // HV−
-		configureLTC(&hspi2, LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN, shuntBitsH,
-				10); // HV+
+		configureLTC(&hspi1, LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN,
+				shuntBitsL, 9);  // HV−
+		configureLTC(&hspi2, LTC6802_CS2_GPIO_PORT, LTC6802_CS2_GPIO_PIN,
+				shuntBitsH, 10); // HV+
 
 		// Start voltage sampling
 		startConversion(&hspi1, LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN);
@@ -340,11 +340,31 @@ int main(void) {
 			voltagesRequested = false;
 			commsTimer = 0;
 
-			for (int packet = 0; packet < 6; packet++) {
+			uint16_t voltagesValid[19];
+			int idx = 0;
+
+			// Copy 9 cell readings from HV-
+			for (int i = 0; i < 9; i++) {
+				voltagesValid[idx++] = voltages[i];
+			}
+
+			// Copy 10 cell readings from HV+
+			for (int i = 12; i < 22; i++) {
+				voltagesValid[idx++] = voltages[i];
+			}
+
+			// Send 5 packets
+			for (int packet = 0; packet < 5; packet++) {
 				for (int n = 0; n < 4; n++) {
-					uint16_t voltageInt = voltages[packet * 4 + n];
-					txData[n * 2] = voltageInt >> 8;
-					txData[n * 2 + 1] = voltageInt & 0xFF;
+					int vidx = packet * 4 + n;
+					if (vidx < 19) {
+						uint16_t voltageInt = voltagesValid[vidx];
+						txData[n * 2] = voltageInt >> 8;
+						txData[n * 2 + 1] = voltageInt & 0xFF;
+					} else {
+						txData[n * 2] = 0;
+						txData[n * 2 + 1] = 0;
+					}
 				}
 
 				txHeader.DLC = 8;
@@ -353,8 +373,9 @@ int main(void) {
 				txHeader.StdId = moduleID + packet + 1;
 
 				if (HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &TxMailBox)
-						!= HAL_OK)
+						!= HAL_OK) {
 					Error_Handler();
+				}
 
 				HAL_Delay(1);
 			}
