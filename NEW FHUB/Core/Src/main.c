@@ -70,7 +70,34 @@ uint16_t s2_aceleracion = 0; // Lectura del sensor 2 del pedal de aceleración
 
 FDCAN_TxHeaderTypeDef TxHeader;
 
+// Scaling variables
+uint16_t s1_scaled = 0;
+uint16_t s2_scaled = 0;
+
+FDCAN_TxHeaderTypeDef TxHeader;
+
 void ADC_Select_S1 ();
+
+// Scaling function for sensor output
+// Add this to your global variables section
+float actual_vref = 3.3f; // You may need to measure and adjust this value
+
+// Modified scaling function
+uint16_t scale_sensor_output(uint16_t raw_adc_value) {
+    // Calibration values - measure these with your actual sensor
+    uint16_t adc_min = 400;   // ADC value at 0.1V (measure this!)
+    uint16_t adc_max = 4095;  // ADC value at 3.2V (measure this!)
+
+    // Clamp to valid range
+    if (raw_adc_value < adc_min) raw_adc_value = adc_min;
+    if (raw_adc_value > adc_max) raw_adc_value = adc_max;
+
+    // Direct scaling
+    uint32_t scaled = ((uint32_t)(raw_adc_value - adc_min) * 4095) / (adc_max - adc_min);
+
+    return (uint16_t)scaled;
+}
+
 
 
 /* USER CODE END 0 */
@@ -112,6 +139,10 @@ int main(void)
   MX_ADC2_Init();
   /* USER CODE BEGIN 2 */
 
+  // Calibrate ADCs for better accuracy
+  	HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
+  	HAL_ADCEx_Calibration_Start(&hadc2, ADC_SINGLE_ENDED);
+
 	if (HAL_FDCAN_Start(&hfdcan1) != HAL_OK) {
 		Error_Handler();
 	}
@@ -127,6 +158,10 @@ int main(void)
 		HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
 		s1_aceleracion = HAL_ADC_GetValue(&hadc1);
 		HAL_ADC_Stop(&hadc1);
+
+		// Apply scaling to sensor 1
+		s1_scaled = scale_sensor_output(s1_aceleracion);
+
 		HAL_Delay(50);
 
 		//ADC_Select_S1();
@@ -137,7 +172,7 @@ int main(void)
 		HAL_Delay(50);*/
 
 		TxHeader.Identifier = 0x100;
-		TxHeader.DataLength = 4;
+		TxHeader.DataLength = 6;
 		TxHeader.IdType = FDCAN_STANDARD_ID;
 		TxHeader.FDFormat = FDCAN_CLASSIC_CAN;
 		TxHeader.TxFrameType = FDCAN_DATA_FRAME;
@@ -462,4 +497,4 @@ void assert_failed(uint8_t *file, uint32_t line)
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
   /* USER CODE END 6 */
 }
-#endif /* USE_FULL_ASSERT */
+#endif /* USE_FULL_ASSERT */
