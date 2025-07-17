@@ -52,9 +52,6 @@ default.size.stdout \
 OBJDUMP_LIST += \
 BMS.list \
 
-OBJCOPY_BIN += \
-BMS.bin \
-
 
 # All Target
 all: main-build
@@ -78,17 +75,12 @@ BMS.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	@echo 'Finished building: $@'
 	@echo ' '
 
-BMS.bin: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-objcopy  -O binary $(EXECUTABLES) "BMS.bin"
-	@echo 'Finished building: $@'
-	@echo ' '
-
 # Other Targets
 clean:
-	-$(RM) BMS.bin BMS.elf BMS.list BMS.map default.size.stdout
+	-$(RM) BMS.elf BMS.list BMS.map default.size.stdout
 	-@echo ' '
 
-secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST) $(OBJCOPY_BIN)
+secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)
 
 fail-specified-linker-script-missing:
 	@echo 'Error: Cannot find the specified linker script. Check the linker settings in the build configuration.'

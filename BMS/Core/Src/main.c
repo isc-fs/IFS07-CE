@@ -70,7 +70,7 @@ uint8_t errorLTC2 = 0;
 #define LTC6802_CS2_GPIO_PORT GPIOB
 #define LTC6802_CS2_GPIO_PIN GPIO_PIN_12
 
-#define TEMPS 1 // For testing the ds18b20 readings disabling cell measurement
+#define TEMPS 0 // For testing the ds18b20 readings disabling cell measurement
 
 /* USER CODE END PD */
 
@@ -377,6 +377,7 @@ int main(void) {
 					Error_Handler();
 				}
 
+				HAL_Delay(1);
 			}
 		} else if (temperaturesRequested) {
 			temperaturesRequested = false;
