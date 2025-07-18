@@ -146,11 +146,10 @@ bool BMS_MOD::parse(uint32_t id, uint8_t *buf, uint32_t t) {
 			}
 
 			return true;
-		}
-		//message_balancing[1] = BALANCING_V & 0xFF;           // Coment this two lines for disabling the balancing
-		//message_balancing[0] = (BALANCING_V >> 8) & 0xFF;    // Coment this two lines for disabling the balancing
 
-		else if (m >= 21 && m <= 26) {
+
+
+		}else if (m >= 21 && m <= 26) {
 			if (flag_charger == 1)
 				module_send_message_CAN1(id, buf, 8); // Reenvío por CAN1 si aplica
 
@@ -201,7 +200,10 @@ int BMS_MOD::return_error() {
  *********************************************************************************************************/
 int BMS_MOD::query_voltage(uint32_t time, char *buffer) {
 	// Shunt voltage in milivolts
-	uint8_t message_balancing[2] = { 0x00, 0x00 };
+	//uint8_t message_balancing[2] = { 0x00, 0x00 };
+
+	message_balancing[1] = BALANCING_V & 0xFF;           // Coment this two lines for disabling the balancing
+	message_balancing[0] = (BALANCING_V >> 8) & 0xFF;    // Coment this two lines for disabling the balancing
 
 	if (time > time_lim_sended) {
 		time_lim_sended += TIME_LIM_SEND;
