@@ -70,8 +70,6 @@ uint8_t errorLTC2 = 0;
 #define LTC6802_CS2_GPIO_PORT GPIOB
 #define LTC6802_CS2_GPIO_PIN GPIO_PIN_12
 
-#define TEMPS 0 // For testing the ds18b20 readings disabling cell measurement
-
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -126,6 +124,9 @@ uint16_t voltages[maxCells]; // In millivolts
 volatile uint16_t shuntVoltage; // In millivolts
 uint32_t shuntBits;
 
+uint8_t ds18b20_flag = 0;
+
+TM_OneWire_t OneWire1;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -172,7 +173,6 @@ int main(void) {
 
 	/* USER CODE BEGIN 1 */
 
-	TM_OneWire_t OneWire1;
 
 	/* USER CODE END 1 */
 
@@ -226,23 +226,18 @@ int main(void) {
 	uint8_t counter = 0;
 	uint8_t slowCounter = 0;
 
-	uint8_t ds18b20_flag = 0;
 
-	uint8_t devices, sensor_count, device[4][8];
+
+	uint8_t devices, sensor_count, device[maxTemps][8];
 
 	/* Check for any device on 1-wire bus*/
 
-	devices = TM_OneWire_First(&OneWire1);
 	sensor_count = 0;
-	while (devices) {
-		/* Increase count variable */
-		sensor_count++;
-
-		/* Get full 8-bytes rom address */
-		TM_OneWire_GetFullROM(&OneWire1, device[sensor_count - 1]);
-
-		/* Check for new device */
-		devices = TM_OneWire_Next(&OneWire1);
+	devices = TM_OneWire_First(&OneWire1);
+	while (devices && sensor_count < maxTemps) {
+	    TM_OneWire_GetFullROM(&OneWire1, device[sensor_count]);
+	    sensor_count++;
+	    devices = TM_OneWire_Next(&OneWire1);
 	}
 
 	// Set 9bit resolution for all sensors (93.75ms max conversion time)
@@ -267,7 +262,6 @@ int main(void) {
 		// Split up the 32-bit shuntBits variable into two 12-bit chunks for each LTC
 		uint32_t shuntBitsL = 0; // shuntBits & 0x0FFF; // Lower 12 bits
 		uint32_t shuntBitsH = 0; // shuntBits >> 12; // Upper 12 bits
-#if !TEMPS
 		// Configure LTC6802 1 (HV-)
 
 		configureLTC(&hspi1, LTC6802_CS1_GPIO_PORT, LTC6802_CS1_GPIO_PIN,
@@ -296,8 +290,6 @@ int main(void) {
 					&shuntBits);
 		}
 
-#endif
-
 		// Start temperature sampling on all devices
 
 		TM_DS18B20_StartAll(&OneWire1);
@@ -322,14 +314,7 @@ int main(void) {
 					commsTimer, COMMS_TIMEOUT, shuntVoltage);
 		}
 
-		// ds18b20_flag = TM_OneWire_Reset(&OneWire1);
-#if TEMPS
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, !ds18b20_flag);
-		HAL_Delay(500);
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, 0);
-		HAL_Delay(500);
-#endif
-		// Update status LEDs
+		ds18b20_flag = TM_OneWire_Reset(&OneWire1);
 
 		if (commsTimer < COMMS_TIMEOUT)
 			commsTimer++;
