@@ -85,6 +85,7 @@ extern "C" {
 #include "stm32f1xx.h"
 #include "stm32f1xx_hal_rcc.h"
 #include "stm32f1xx_hal_gpio.h"
+#include "delay.h"
 
 /**
  * @defgroup TM_ONEWIRE_Macros

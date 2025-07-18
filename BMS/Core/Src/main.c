@@ -22,6 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "ds18b20.h"
+#include "delay.h"
 #include "LTC6802-2.h"
 #include <string.h>
 #include <stdbool.h>
@@ -314,7 +315,7 @@ int main(void) {
 					commsTimer, COMMS_TIMEOUT, shuntVoltage);
 		}
 
-		ds18b20_flag = TM_OneWire_Reset(&OneWire1);
+		//ds18b20_flag = TM_OneWire_Reset(&OneWire1);
 
 		if (commsTimer < COMMS_TIMEOUT)
 			commsTimer++;
@@ -817,11 +818,11 @@ void PubModuleID(void) {
 	HAL_Delay(1);
 }
 
-void Delay_us(uint16_t us) {
+/*void Delay_us(uint16_t us) {
 	__HAL_TIM_SET_COUNTER(&htim1, 0);
 	while (__HAL_TIM_GET_COUNTER(&htim1) < us)
 		;
-}
+}*/
 
 void SPIWrite(SPI_HandleTypeDef *hspi, uint8_t cmd) {
 	HAL_SPI_Transmit(hspi, (uint8_t*) &cmd, 1, HAL_MAX_DELAY);
