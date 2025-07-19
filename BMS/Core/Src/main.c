@@ -204,7 +204,7 @@ int main(void) {
 		Error_Handler();
 	}
 
-	//DS18B20_Init(DS18B20_Resolution_9bits);
+	DS18B20_Init(DS18B20_Resolution_9bits);
 
 	GetModuleID();
 
@@ -264,9 +264,9 @@ int main(void) {
 
 		// Start temperature sampling on all devices
 
-		//DS18B20_StartAll();
-		//waitForTempConversion();
-		//DS18B20_ReadAll();
+		DS18B20_StartAll();
+		waitForTempConversion();
+		DS18B20_ReadAll();
 
 		// Extract temperature data
 	}
