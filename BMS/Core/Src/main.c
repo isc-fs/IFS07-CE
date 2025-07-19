@@ -112,6 +112,8 @@ volatile uint8_t selfTestRequested = false;
 volatile uint8_t selfTest2Requested = false;
 volatile uint8_t sendSensorROMs = false;
 
+volatile uint8_t tempConversionInProgress = 0;
+volatile uint8_t tempReadReady = 0;
 
 uint16_t moduleID = 0;
 
@@ -128,6 +130,9 @@ uint32_t shuntBits;
 uint8_t ds18b20_flag = 0;
 
 TM_OneWire_t OneWire1;
+
+uint8_t devices, sensor_count;
+static uint8_t device[maxTemps][8];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -160,6 +165,10 @@ void configureLTC(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port,
 		uint16_t cs_pin, uint32_t shuntBits, uint8_t activeCells);
 void startConversion(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port,
 		uint16_t cs_pin);
+
+void DS18B20_StartConversion(void);
+void DS18B20_ReadTemperatures(void);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -175,7 +184,6 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
 
   /* USER CODE END 1 */
 
@@ -230,19 +238,17 @@ int main(void)
 	uint8_t counter = 0;
 	uint8_t slowCounter = 0;
 
-
-
-	uint8_t devices, sensor_count, device[maxTemps][8];
-
 	/* Check for any device on 1-wire bus*/
 
 	sensor_count = 0;
 	devices = TM_OneWire_First(&OneWire1);
 	while (devices) {
-	    TM_OneWire_GetFullROM(&OneWire1, device[sensor_count]);
-	    sensor_count++;
-	    devices = TM_OneWire_Next(&OneWire1);
+		TM_OneWire_GetFullROM(&OneWire1, device[sensor_count]);
+		sensor_count++;
+		devices = TM_OneWire_Next(&OneWire1);
 	}
+
+	sensor_count = 3;
 
 	// Set 9bit resolution for all sensors (93.75ms max conversion time)
 
@@ -293,16 +299,9 @@ int main(void)
 
 		// Start temperature sampling on all devices
 
-		TM_DS18B20_StartAll(&OneWire1);
-		while (!TM_DS18B20_AllDone(&OneWire1))
-			;
-
-		// Extract temperature data
-
-		for (int i = 0; i < sensor_count; i++) {
-			if (TM_DS18B20_Read(&OneWire1, device[i], &temp[i])) {
-				ds18b20_flag = 1;
-			}
+		if (tempReadReady) {
+			DS18B20_ReadTemperatures();
+			DS18B20_StartConversion();  // Inicia nueva conversión tras lectura
 		}
 
 		counter++;
@@ -373,7 +372,7 @@ int main(void)
 
 				for (int i = 0; i < 8; i++) {
 					if ((i + 8 * packet) < sensor_count) {
-						txData[i] = temp[i + 8 * packet];
+						txData[i] = (uint8_t)temp[i + 8 * packet];
 					} else {
 						txData[i] = 0;
 					}
@@ -497,27 +496,26 @@ int main(void)
 			}
 
 		} else if (sendSensorROMs) {
-		    sendSensorROMs = false;
+			sendSensorROMs = false;
 
-		    for (int i = 0; i < sensor_count; i++) {
-		        for (int j = 0; j < 8; j++) {
-		            txData[j] = device[i][j];
-		        }
+			for (int i = 0; i < sensor_count; i++) {
+				for (int j = 0; j < 8; j++) {
+					txData[j] = device[i][j];
+				}
 
-		        txHeader.DLC = 8;
-		        txHeader.IDE = CAN_ID_STD;
-		        txHeader.RTR = CAN_RTR_DATA;
-		        txHeader.StdId = moduleID + 500 + i;
+				txHeader.DLC = 8;
+				txHeader.IDE = CAN_ID_STD;
+				txHeader.RTR = CAN_RTR_DATA;
+				txHeader.StdId = moduleID + 500 + i;
 
-		        if (HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &TxMailBox) != HAL_OK) {
-		            Error_Handler();
-		        }
+				if (HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &TxMailBox)
+						!= HAL_OK) {
+					Error_Handler();
+				}
 
-		        HAL_Delay(1);
-		    }
+				HAL_Delay(1);
+			}
 		}
-
-
 
 		else {
 			HAL_Delay(4);
@@ -762,7 +760,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 64000 - 1;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 65535;
+  htim2.Init.Period = 100 - 1;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -866,7 +864,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
 	}
 
 	if (rxPacketID == moduleID + 200) {
-	    sendSensorROMs = true;
+		sendSensorROMs = true;
 	}
 
 	if (rxPacketID == moduleID + 15) {
@@ -907,10 +905,22 @@ void PubModuleID(void) {
 }
 
 /*void Delay_us(uint16_t us) {
-	__HAL_TIM_SET_COUNTER(&htim1, 0);
-	while (__HAL_TIM_GET_COUNTER(&htim1) < us)
-		;
-}*/
+ __HAL_TIM_SET_COUNTER(&htim1, 0);
+ while (__HAL_TIM_GET_COUNTER(&htim1) < us)
+ ;
+ }*/
+
+void TIM2_IRQHandler(void) {
+	HAL_TIM_IRQHandler(&htim2);
+}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+	if (htim->Instance == TIM2) {
+		HAL_TIM_Base_Stop_IT(&htim2);
+		tempReadReady = 1;
+		tempConversionInProgress = 0;
+	}
+}
 
 void SPIWrite(SPI_HandleTypeDef *hspi, uint8_t cmd) {
 	HAL_SPI_Transmit(hspi, (uint8_t*) &cmd, 1, HAL_MAX_DELAY);
@@ -1104,6 +1114,28 @@ void startConversion(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port,
 	HAL_GPIO_WritePin(cs_port, cs_pin, GPIO_PIN_RESET);
 	SPIWrite(hspi, STCVAD); // Start cell voltage ADC
 	HAL_GPIO_WritePin(cs_port, cs_pin, GPIO_PIN_SET);
+}
+
+void DS18B20_ReadTemperatures(void) {
+	for (int i = 0; i < sensor_count; i++) {
+		if (!TM_DS18B20_Read(&OneWire1, device[i], &temp[i])) {
+			temp[i] = 127.0f;  // Error
+		}
+	}
+	tempReadReady = 0;
+
+}
+
+void DS18B20_StartConversion(void) {
+	if (tempConversionInProgress)
+		return;
+
+	TM_DS18B20_StartAll(&OneWire1);
+	tempConversionInProgress = 1;
+	tempReadReady = 0;
+
+	__HAL_TIM_SET_COUNTER(&htim2, 0);
+	HAL_TIM_Base_Start_IT(&htim2);
 }
 
 /* USER CODE END 4 */
