@@ -212,6 +212,7 @@ int main(void)
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 	HAL_TIM_Base_Start_IT(&htim1);
+	HAL_TIM_Base_Start_IT(&htim2);
 	HAL_CAN_Start(&hcan);
 	if (HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING)
 			!= HAL_OK) {
@@ -242,13 +243,14 @@ int main(void)
 
 	sensor_count = 0;
 	devices = TM_OneWire_First(&OneWire1);
-	while (devices) {
+	while (devices && sensor_count <= maxTemps) {
 		TM_OneWire_GetFullROM(&OneWire1, device[sensor_count]);
 		sensor_count++;
 		devices = TM_OneWire_Next(&OneWire1);
 	}
 
-	sensor_count = 3;
+
+
 
 	// Set 9bit resolution for all sensors (93.75ms max conversion time)
 
@@ -306,7 +308,7 @@ int main(void)
 
 		counter++;
 
-		if (counter >= 8) {
+		if (counter >= 16) {
 			counter = 0;
 			slowCounter = (slowCounter + 1) % 4;
 
@@ -372,7 +374,7 @@ int main(void)
 
 				for (int i = 0; i < 8; i++) {
 					if ((i + 8 * packet) < sensor_count) {
-						txData[i] = (uint8_t)temp[i + 8 * packet];
+						txData[i] = temp[i + 8 * packet];
 					} else {
 						txData[i] = 0;
 					}
@@ -387,6 +389,8 @@ int main(void)
 						!= HAL_OK) {
 					Error_Handler();
 				}
+
+				HAL_Delay(1);
 			}
 		} else if (rawValuesRequested) {
 			rawValuesRequested = false;
@@ -405,8 +409,11 @@ int main(void)
 				txHeader.StdId = moduleID + 100 + packet;
 
 				if (HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &TxMailBox)
-						!= HAL_OK)
+						!= HAL_OK){
 					Error_Handler();
+				}
+
+				HAL_Delay(1);
 			}
 
 			for (int packet = 0; packet < 3; packet++) {
@@ -419,8 +426,11 @@ int main(void)
 				txHeader.StdId = moduleID + 110 + packet;
 
 				if (HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &TxMailBox)
-						!= HAL_OK)
+						!= HAL_OK){
 					Error_Handler();
+				}
+
+				HAL_Delay(1);
 			}
 		} else if (selfTestRequested) {
 			selfTestRequested = false;
@@ -441,8 +451,10 @@ int main(void)
 				txHeader.RTR = CAN_RTR_DATA;
 
 				if (HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &TxMailBox)
-						!= HAL_OK)
+						!= HAL_OK){
 					Error_Handler();
+				}
+				HAL_Delay(1);
 			}
 
 			for (int packet = 0; packet < 3; packet++) {
@@ -455,8 +467,11 @@ int main(void)
 				txHeader.StdId = moduleID + 125 + packet;
 
 				if (HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &TxMailBox)
-						!= HAL_OK)
+						!= HAL_OK){
 					Error_Handler();
+				}
+
+				HAL_Delay(1);
 			}
 		} else if (selfTest2Requested) {
 			selfTest2Requested = false;
@@ -491,8 +506,11 @@ int main(void)
 				txHeader.StdId = moduleID + 115 + packet;
 
 				if (HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &TxMailBox)
-						!= HAL_OK)
+						!= HAL_OK) {
 					Error_Handler();
+				}
+
+				HAL_Delay(1);
 			}
 
 		} else if (sendSensorROMs) {
@@ -760,7 +778,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 64000 - 1;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 100 - 1;
+  htim2.Init.Period = 200 - 1;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -909,10 +927,6 @@ void PubModuleID(void) {
  while (__HAL_TIM_GET_COUNTER(&htim1) < us)
  ;
  }*/
-
-void TIM2_IRQHandler(void) {
-	HAL_TIM_IRQHandler(&htim2);
-}
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim->Instance == TIM2) {
@@ -1118,9 +1132,7 @@ void startConversion(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port,
 
 void DS18B20_ReadTemperatures(void) {
 	for (int i = 0; i < sensor_count; i++) {
-		if (!TM_DS18B20_Read(&OneWire1, device[i], &temp[i])) {
-			temp[i] = 127.0f;  // Error
-		}
+		TM_DS18B20_Read(&OneWire1, device[i], &temp[i]);
 	}
 	tempReadReady = 0;
 
