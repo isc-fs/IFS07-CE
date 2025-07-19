@@ -125,9 +125,6 @@ uint16_t voltages[maxCells]; // In millivolts
 volatile uint16_t shuntVoltage; // In millivolts
 uint32_t shuntBits;
 
-uint8_t ds18b20_flag = 0;
-
-TM_OneWire_t OneWire1;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -159,6 +156,7 @@ void configureLTC(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port,
 		uint16_t cs_pin, uint32_t shuntBits, uint8_t activeCells);
 void startConversion(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port,
 		uint16_t cs_pin);
+void waitForTempConversion(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -173,7 +171,6 @@ void startConversion(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port,
 int main(void) {
 
 	/* USER CODE BEGIN 1 */
-
 
 	/* USER CODE END 1 */
 
@@ -207,10 +204,11 @@ int main(void) {
 		Error_Handler();
 	}
 
+	//DS18B20_Init(DS18B20_Resolution_9bits);
+
 	GetModuleID();
 
 	PubModuleID();
-	TM_OneWire_Init(&OneWire1, GPIOA, DQ_Pin);
 
 	for (int n = 0; n < maxCells; n++)
 		voltages[n] = 0;
@@ -226,33 +224,6 @@ int main(void) {
 	// int voltages[24][8]; //De momento no hacemos la media
 	uint8_t counter = 0;
 	uint8_t slowCounter = 0;
-
-
-
-	uint8_t devices, sensor_count, device[maxTemps][8];
-
-	/* Check for any device on 1-wire bus*/
-
-	sensor_count = 0;
-	devices = TM_OneWire_First(&OneWire1);
-	while (devices && sensor_count < maxTemps) {
-	    TM_OneWire_GetFullROM(&OneWire1, device[sensor_count]);
-	    sensor_count++;
-	    devices = TM_OneWire_Next(&OneWire1);
-	}
-
-	// Set 9bit resolution for all sensors (93.75ms max conversion time)
-
-	for (int i = 0; i < sensor_count; i++) {
-		TM_DS18B20_SetResolution(&OneWire1, device[i],
-				TM_DS18B20_Resolution_9bits);
-	}
-
-	// Calculates the necessary CAN packets for sending all the temperatures
-	uint8_t n_packets_temps = sensor_count / 8 + ((sensor_count % 8) ? 1 : 0);
-
-	if (sensor_count > 0)
-		ds18b20_flag = 1;
 
 	/* USER CODE END 2 */
 
@@ -293,218 +264,219 @@ int main(void) {
 
 		// Start temperature sampling on all devices
 
-		TM_DS18B20_StartAll(&OneWire1);
-		while (!TM_DS18B20_AllDone(&OneWire1))
-			;
+		//DS18B20_StartAll();
+		//waitForTempConversion();
+		//DS18B20_ReadAll();
 
 		// Extract temperature data
-
-		for (int i = 0; i < sensor_count; i++) {
-			if (TM_DS18B20_Read(&OneWire1, device[i], &temp[i])) {
-				ds18b20_flag = 1;
-			}
-		}
-
-		counter++;
-
-		if (counter >= 16) {
-			counter = 0;
-			slowCounter = (slowCounter + 1) % 4;
-
-			updateLEDStatus(voltages, maxCells, shuntBits, slowCounter,
-					commsTimer, COMMS_TIMEOUT, shuntVoltage);
-		}
-
-		//ds18b20_flag = TM_OneWire_Reset(&OneWire1);
-
-		if (commsTimer < COMMS_TIMEOUT)
-			commsTimer++;
-		else
-			shuntVoltage = 0;
-
-		if (voltagesRequested) {
-			voltagesRequested = false;
-			commsTimer = 0;
-
-			uint16_t voltagesValid[19];
-			int idx = 0;
-
-			// Copy 9 cell readings from HV-
-			for (int i = 0; i < 9; i++) {
-				voltagesValid[idx++] = voltages[i];
-			}
-
-			// Copy 10 cell readings from HV+
-			for (int i = 12; i < 22; i++) {
-				voltagesValid[idx++] = voltages[i];
-			}
-
-			// Send 5 packets
-			for (int packet = 0; packet < 5; packet++) {
-				for (int n = 0; n < 4; n++) {
-					int vidx = packet * 4 + n;
-					if (vidx < 19) {
-						uint16_t voltageInt = voltagesValid[vidx];
-						txData[n * 2] = voltageInt >> 8;
-						txData[n * 2 + 1] = voltageInt & 0xFF;
-					} else {
-						txData[n * 2] = 0;
-						txData[n * 2 + 1] = 0;
-					}
-				}
-
-				txHeader.DLC = 8;
-				txHeader.IDE = CAN_ID_STD;
-				txHeader.RTR = CAN_RTR_DATA;
-				txHeader.StdId = moduleID + packet + 1;
-
-				if (HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &TxMailBox)
-						!= HAL_OK) {
-					Error_Handler();
-				}
-
-				HAL_Delay(1);
-			}
-		} else if (temperaturesRequested) {
-			temperaturesRequested = false;
-			commsTimer = 0;
-
-			for (int packet = 0; packet < n_packets_temps; packet++) {
-
-				for (int i = 0; i < 8; i++) {
-					if ((i + 8 * packet) < sensor_count) {
-						txData[i] = temp[i + 8 * packet];
-					} else {
-						txData[i] = 0;
-					}
-				}
-
-				txHeader.DLC = 8;
-				txHeader.IDE = CAN_ID_STD;
-				txHeader.RTR = CAN_RTR_DATA;
-				txHeader.StdId = moduleID + 20 + packet + 1;
-
-				if (HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &TxMailBox)
-						!= HAL_OK) {
-					Error_Handler();
-				}
-			}
-		} else if (rawValuesRequested) {
-			rawValuesRequested = false;
-			commsTimer = 0;
-
-			for (int packet = 0; packet < 3; packet++) {
-				for (int i = 0; i < 6; i++) {
-					txData[i] = cellBytes1[packet * 6 + i];
-				}
-				txData[6] = 0xC0 + packet;
-				txData[7] = 0; // Padding
-
-				txHeader.DLC = 8;
-				txHeader.IDE = CAN_ID_STD;
-				txHeader.RTR = CAN_RTR_DATA;
-				txHeader.StdId = moduleID + 100 + packet;
-
-				if (HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &TxMailBox)
-						!= HAL_OK)
-					Error_Handler();
-			}
-
-			for (int packet = 0; packet < 3; packet++) {
-				for (int i = 0; i < 6; i++) {
-					txData[i] = cellBytes2[packet * 6 + i];
-				}
-				txData[6] = 0xD0 + packet;
-				txData[7] = 0;
-
-				txHeader.StdId = moduleID + 110 + packet;
-
-				if (HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &TxMailBox)
-						!= HAL_OK)
-					Error_Handler();
-			}
-		} else if (selfTestRequested) {
-			selfTestRequested = false;
-			commsTimer = 0;
-
-			RunSelfTest(cellBytes1, cellBytes2, 0x1E);
-
-			for (int packet = 0; packet < 3; packet++) {
-				for (int i = 0; i < 6; i++) {
-					txData[i] = cellBytes1[packet * 6 + i];
-				}
-				txData[6] = 0xE0 + packet; // etiqueta especial para Self Test
-				txData[7] = 0;
-
-				txHeader.StdId = moduleID + 120 + packet;
-				txHeader.DLC = 8;
-				txHeader.IDE = CAN_ID_STD;
-				txHeader.RTR = CAN_RTR_DATA;
-
-				if (HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &TxMailBox)
-						!= HAL_OK)
-					Error_Handler();
-			}
-
-			for (int packet = 0; packet < 3; packet++) {
-				for (int i = 0; i < 6; i++) {
-					txData[i] = cellBytes2[packet * 6 + i];
-				}
-				txData[6] = 0xF0 + packet;
-				txData[7] = 0;
-
-				txHeader.StdId = moduleID + 125 + packet;
-
-				if (HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &TxMailBox)
-						!= HAL_OK)
-					Error_Handler();
-			}
-		} else if (selfTest2Requested) {
-			selfTest2Requested = false;
-			commsTimer = 0;
-
-			RunSelfTest(cellBytes1, cellBytes2, 0x1F); // Self Test 2
-
-			for (int packet = 0; packet < 3; packet++) {
-				for (int i = 0; i < 6; i++) {
-					txData[i] = cellBytes1[packet * 6 + i];
-				}
-				txData[6] = 0xD0 + packet; // etiqueta para Self Test 2 LTC1
-				txData[7] = 0;
-
-				txHeader.StdId = moduleID + 110 + packet;
-				txHeader.DLC = 8;
-				txHeader.IDE = CAN_ID_STD;
-				txHeader.RTR = CAN_RTR_DATA;
-
-				if (HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &TxMailBox)
-						!= HAL_OK)
-					Error_Handler();
-			}
-
-			for (int packet = 0; packet < 3; packet++) {
-				for (int i = 0; i < 6; i++) {
-					txData[i] = cellBytes2[packet * 6 + i];
-				}
-				txData[6] = 0xC0 + packet; // etiqueta para Self Test 2 LTC2
-				txData[7] = 0;
-
-				txHeader.StdId = moduleID + 115 + packet;
-
-				if (HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &TxMailBox)
-						!= HAL_OK)
-					Error_Handler();
-			}
-
-		} else {
-			HAL_Delay(4);
-		}
 	}
-	/* USER CODE END WHILE */
-}
-/* USER CODE BEGIN 3 */
 
-/* USER CODE END 3 */
+	counter++;
+
+	if (counter >= 16) {
+		counter = 0;
+		slowCounter = (slowCounter + 1) % 4;
+
+		updateLEDStatus(voltages, maxCells, shuntBits, slowCounter, commsTimer,
+		COMMS_TIMEOUT, shuntVoltage);
+	}
+
+	if (commsTimer < COMMS_TIMEOUT)
+		commsTimer++;
+	else
+		shuntVoltage = 0;
+
+	if (voltagesRequested) {
+		voltagesRequested = false;
+		commsTimer = 0;
+
+		uint16_t voltagesValid[19];
+		int idx = 0;
+
+		// Copy 9 cell readings from HV-
+		for (int i = 0; i < 9; i++) {
+			voltagesValid[idx++] = voltages[i];
+		}
+
+		// Copy 10 cell readings from HV+
+		for (int i = 12; i < 22; i++) {
+			voltagesValid[idx++] = voltages[i];
+		}
+
+		// Send 5 packets
+		for (int packet = 0; packet < 5; packet++) {
+			for (int n = 0; n < 4; n++) {
+				int vidx = packet * 4 + n;
+				if (vidx < 19) {
+					uint16_t voltageInt = voltagesValid[vidx];
+					txData[n * 2] = voltageInt >> 8;
+					txData[n * 2 + 1] = voltageInt & 0xFF;
+				} else {
+					txData[n * 2] = 0;
+					txData[n * 2 + 1] = 0;
+				}
+			}
+
+			txHeader.DLC = 8;
+			txHeader.IDE = CAN_ID_STD;
+			txHeader.RTR = CAN_RTR_DATA;
+			txHeader.StdId = moduleID + packet + 1;
+
+			if (HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &TxMailBox)
+					!= HAL_OK) {
+				Error_Handler();
+			}
+
+			HAL_Delay(1);
+		}
+	} else if (temperaturesRequested) {
+		temperaturesRequested = false;
+		commsTimer = 0;
+
+		uint8_t sensorCount = DS18B20_Quantity();
+
+		for (uint8_t packet = 0; packet < (sensorCount + 3) / 4; packet++) {
+			for (uint8_t i = 0; i < 4; i++) {
+				uint8_t index = packet * 4 + i;
+
+				int16_t ti = 0x7FFF;  //Invalid sensor
+				float t;
+				if (index < sensorCount && DS18B20_GetTemperature(index, &t)) {
+					ti = (int16_t) (t * 10.0f);  // 0.1 ºC scaling
+				}
+
+				txData[i * 2] = (ti >> 8) & 0xFF;
+				txData[i * 2 + 1] = ti & 0xFF;
+			}
+
+			txHeader.DLC = 8;
+			txHeader.IDE = CAN_ID_STD;
+			txHeader.RTR = CAN_RTR_DATA;
+			txHeader.StdId = moduleID + 21 + packet;
+
+			if (HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &TxMailBox)
+					!= HAL_OK)
+				Error_Handler();
+
+			HAL_Delay(1);
+		}
+	} else if (rawValuesRequested) {
+		rawValuesRequested = false;
+		commsTimer = 0;
+
+		for (int packet = 0; packet < 3; packet++) {
+			for (int i = 0; i < 6; i++) {
+				txData[i] = cellBytes1[packet * 6 + i];
+			}
+			txData[6] = 0xC0 + packet;
+			txData[7] = 0; // Padding
+
+			txHeader.DLC = 8;
+			txHeader.IDE = CAN_ID_STD;
+			txHeader.RTR = CAN_RTR_DATA;
+			txHeader.StdId = moduleID + 100 + packet;
+
+			if (HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &TxMailBox)
+					!= HAL_OK)
+				Error_Handler();
+		}
+
+		for (int packet = 0; packet < 3; packet++) {
+			for (int i = 0; i < 6; i++) {
+				txData[i] = cellBytes2[packet * 6 + i];
+			}
+			txData[6] = 0xD0 + packet;
+			txData[7] = 0;
+
+			txHeader.StdId = moduleID + 110 + packet;
+
+			if (HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &TxMailBox)
+					!= HAL_OK)
+				Error_Handler();
+		}
+	} else if (selfTestRequested) {
+		selfTestRequested = false;
+		commsTimer = 0;
+
+		RunSelfTest(cellBytes1, cellBytes2, 0x1E);
+
+		for (int packet = 0; packet < 3; packet++) {
+			for (int i = 0; i < 6; i++) {
+				txData[i] = cellBytes1[packet * 6 + i];
+			}
+			txData[6] = 0xE0 + packet; // etiqueta especial para Self Test
+			txData[7] = 0;
+
+			txHeader.StdId = moduleID + 120 + packet;
+			txHeader.DLC = 8;
+			txHeader.IDE = CAN_ID_STD;
+			txHeader.RTR = CAN_RTR_DATA;
+
+			if (HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &TxMailBox)
+					!= HAL_OK)
+				Error_Handler();
+		}
+
+		for (int packet = 0; packet < 3; packet++) {
+			for (int i = 0; i < 6; i++) {
+				txData[i] = cellBytes2[packet * 6 + i];
+			}
+			txData[6] = 0xF0 + packet;
+			txData[7] = 0;
+
+			txHeader.StdId = moduleID + 125 + packet;
+
+			if (HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &TxMailBox)
+					!= HAL_OK)
+				Error_Handler();
+		}
+	} else if (selfTest2Requested) {
+		selfTest2Requested = false;
+		commsTimer = 0;
+
+		RunSelfTest(cellBytes1, cellBytes2, 0x1F); // Self Test 2
+
+		for (int packet = 0; packet < 3; packet++) {
+			for (int i = 0; i < 6; i++) {
+				txData[i] = cellBytes1[packet * 6 + i];
+			}
+			txData[6] = 0xD0 + packet; // etiqueta para Self Test 2 LTC1
+			txData[7] = 0;
+
+			txHeader.StdId = moduleID + 110 + packet;
+			txHeader.DLC = 8;
+			txHeader.IDE = CAN_ID_STD;
+			txHeader.RTR = CAN_RTR_DATA;
+
+			if (HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &TxMailBox)
+					!= HAL_OK)
+				Error_Handler();
+		}
+
+		for (int packet = 0; packet < 3; packet++) {
+			for (int i = 0; i < 6; i++) {
+				txData[i] = cellBytes2[packet * 6 + i];
+			}
+			txData[6] = 0xC0 + packet; // etiqueta para Self Test 2 LTC2
+			txData[7] = 0;
+
+			txHeader.StdId = moduleID + 115 + packet;
+
+			if (HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &TxMailBox)
+					!= HAL_OK)
+				Error_Handler();
+		}
+
+	} else {
+		HAL_Delay(4);
+	}
+
+	/* USER CODE END WHILE */
+
+	/* USER CODE BEGIN 3 */
+
+	/* USER CODE END 3 */
+}
 
 /**
  * @brief System Clock Configuration
@@ -587,6 +559,7 @@ static void MX_CAN_Init(void) {
 	HAL_CAN_ConfigFilter(&hcan, &canfilterconfig);
 
 	/* USER CODE END CAN_Init 2 */
+
 }
 
 /**
@@ -622,6 +595,7 @@ static void MX_SPI1_Init(void) {
 	/* USER CODE BEGIN SPI1_Init 2 */
 
 	/* USER CODE END SPI1_Init 2 */
+
 }
 
 /**
@@ -657,6 +631,7 @@ static void MX_SPI2_Init(void) {
 	/* USER CODE BEGIN SPI2_Init 2 */
 
 	/* USER CODE END SPI2_Init 2 */
+
 }
 
 /**
@@ -699,6 +674,7 @@ static void MX_TIM1_Init(void) {
 	/* USER CODE BEGIN TIM1_Init 2 */
 
 	/* USER CODE END TIM1_Init 2 */
+
 }
 
 /**
@@ -717,7 +693,7 @@ static void MX_GPIO_Init(void) {
 	__HAL_RCC_GPIOB_CLK_ENABLE();
 
 	/*Configure GPIO pin Output Level */
-	HAL_GPIO_WritePin(GPIOA, DQ_Pin | GPIO_PIN_10 | GPIO_PIN_15,
+	HAL_GPIO_WritePin(GPIOA, DS18B20_Pin_Pin | GPIO_PIN_10 | GPIO_PIN_15,
 			GPIO_PIN_RESET);
 
 	/*Configure GPIO pin Output Level */
@@ -726,16 +702,16 @@ static void MX_GPIO_Init(void) {
 	/*Configure GPIO pin Output Level */
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
 
-	/*Configure GPIO pins : DQ_Pin PA8 PA10 PA15 */
-	GPIO_InitStruct.Pin = DQ_Pin | GPIO_PIN_8 | GPIO_PIN_10 | GPIO_PIN_15;
+	/*Configure GPIO pins : DS18B20_Pin_Pin PA8 PA10 PA15 */
+	GPIO_InitStruct.Pin = DS18B20_Pin_Pin | GPIO_PIN_8 | GPIO_PIN_10
+			| GPIO_PIN_15;
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
 	/*Configure GPIO pins : PB10 PB7 PB8 PB9 */
-	GPIO_InitStruct.Pin =
-	GPIO_PIN_10 | GPIO_PIN_7 | GPIO_PIN_8 | GPIO_PIN_9;
+	GPIO_InitStruct.Pin = GPIO_PIN_10 | GPIO_PIN_7 | GPIO_PIN_8 | GPIO_PIN_9;
 	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
 	GPIO_InitStruct.Pull = GPIO_PULLUP;
 	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
@@ -819,10 +795,10 @@ void PubModuleID(void) {
 }
 
 /*void Delay_us(uint16_t us) {
-	__HAL_TIM_SET_COUNTER(&htim1, 0);
-	while (__HAL_TIM_GET_COUNTER(&htim1) < us)
-		;
-}*/
+ __HAL_TIM_SET_COUNTER(&htim1, 0);
+ while (__HAL_TIM_GET_COUNTER(&htim1) < us)
+ ;
+ }*/
 
 void SPIWrite(SPI_HandleTypeDef *hspi, uint8_t cmd) {
 	HAL_SPI_Transmit(hspi, (uint8_t*) &cmd, 1, HAL_MAX_DELAY);
@@ -1018,6 +994,15 @@ void startConversion(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port,
 	HAL_GPIO_WritePin(cs_port, cs_pin, GPIO_PIN_SET);
 }
 
+void waitForTempConversion(void) {
+	uint32_t start = HAL_GetTick();
+	while (!DS18B20_AllDone()) {
+		if (HAL_GetTick() - start > 200) {  // Timeout a 200 ms
+			break;
+		}
+	}
+}
+
 /* USER CODE END 4 */
 
 /**
@@ -1033,19 +1018,19 @@ void Error_Handler(void) {
 	/* USER CODE END Error_Handler_Debug */
 }
 
-#ifdef USE_FULL_ASSERT
-	/**
-	 * @brief  Reports the name of the source file and the source line number
-	 *         where the assert_param error has occurred.
-	 * @param  file: pointer to the source file name
-	 * @param  line: assert_param error line source number
-	 * @retval None
-	 */
-	void assert_failed(uint8_t *file, uint32_t line)
-	{
-		/* USER CODE BEGIN 6 */
+#ifdef  USE_FULL_ASSERT
+/**
+  * @brief  Reports the name of the source file and the source line number
+  *         where the assert_param error has occurred.
+  * @param  file: pointer to the source file name
+  * @param  line: assert_param error line source number
+  * @retval None
+  */
+void assert_failed(uint8_t *file, uint32_t line)
+{
+  /* USER CODE BEGIN 6 */
 		/* User can add his own implementation to report the file name and line number,
 		   ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-		/* USER CODE END 6 */
-	}
+  /* USER CODE END 6 */
+}
 #endif /* USE_FULL_ASSERT */

@@ -25,7 +25,7 @@ BMS_MOD BMS[] = {
 		};
 
 
-int BMS_N = 5;
+int BMS_N = 0;
 int MIN_V = 4200;
 int MAX_T = 0;
 uint8_t message_MINV[2] = { 0, 0 }; //Here I'll get the minimun voltages for sending them for telemetry
