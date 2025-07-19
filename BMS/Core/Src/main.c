@@ -48,9 +48,6 @@ enum {
 #define true 1
 #define false 0
 
-uint8_t errorLTC1 = 0;
-uint8_t errorLTC2 = 0;
-
 // Inputs from hex rotary pot for module ID selection
 
 #define MOD_ID_NUM1 (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_10) == GPIO_PIN_RESET)
@@ -307,7 +304,7 @@ int main(void) {
 
 		counter++;
 
-		if (counter >= 16) {
+		if (counter >= 8) {
 			counter = 0;
 			slowCounter = (slowCounter + 1) % 4;
 
