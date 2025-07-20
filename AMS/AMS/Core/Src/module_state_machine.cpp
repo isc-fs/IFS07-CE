@@ -91,7 +91,7 @@ void select_state() {
 
 		if (BMS[i].query_voltage(time, buffer) != BMS_OK) //I ask the BMS about voltages and cheking their states
 		{
-			//state = error;
+			state = error;
 		}
 
 		CPU.voltage_acum += BMS[i].voltage_acum; // For precharge
@@ -99,9 +99,9 @@ void select_state() {
 			MIN_V = BMS[i].MIN_V; //Checking the minimun voltage of cell in the whole battery
 
 
-		/*if (BMS[i].query_temperature(time, buffer) != Temperatures_OK){
+		if (BMS[i].query_temperature(time, buffer) != Temperatures_OK){
 			state = error;
-		}*/
+		}
 
 		if (BMS[i].MAX_T > MAX_T)
 			MAX_T = BMS[i].MAX_T;
@@ -235,7 +235,7 @@ void parse_state(CANMsg data) {
 	bool flag_bms = false;
 
 	for (int i = 0; i < BMS_N; i++) {
-		flag_bms = BMS[i].parse(data.id, &data.buf[0], time); //Checking if the message received is for  BMS
+		flag_bms = BMS[i].parse(data.id, &data.buf[0], data.time); //Checking if the message received is for  BMS
 		if (flag_bms)
 			i = BMS_N;
 	}

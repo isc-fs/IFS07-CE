@@ -25,7 +25,8 @@
 class BMS_MOD {
 private:
 	uint32_t CANID = 0x12C;                          // The id of the CAN device
-	int error = BMS_OK;                     // Variable for error handling
+	int error_volt = BMS_OK;                     // Variable for error handling
+	int error_temp = BMS_OK;
 
 	int LIMIT_MAX_V = 0;
 	int LIMIT_MIN_V = 0;
@@ -35,7 +36,7 @@ private:
 
 
 	uint32_t TIME_LIM_PLOT_VOLTS = 1000; // Interval of time for ploting voltage info in ms
-	uint32_t TIME_LIM_SEND_VOLTS = 200;   // Interval to send message in ms
+	uint32_t TIME_LIM_SEND_VOLTS = 50;   // Interval to send message in ms
 	uint32_t TIME_LIM_RECV_VOLTS = 500;   // Limit time for communication in ms
 
 	uint32_t TIME_LIM_PLOT_TEMPS = 1500;   // Interval of time for ploting temperature info in ms
@@ -53,6 +54,7 @@ private:
 	uint8_t message_balancing[2] = { 0, 0 }; // Voltage in mV
 	uint8_t message_temperatures[2] = { 0, 0 };
 	uint8_t NUM_CELLS = 19;
+
 	int max_flag = 3;
 	int flag_error_volt[12] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 	int flag_error_temp = 0;
