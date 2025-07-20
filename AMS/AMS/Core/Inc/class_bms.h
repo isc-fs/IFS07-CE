@@ -20,24 +20,36 @@
 #define BMS_ERROR_VOLTS           2
 #define BMS_ERROR_TEMP            3
 
+#define numCells 19
+
 class BMS_MOD {
 private:
 	uint32_t CANID = 0x12C;                          // The id of the CAN device
 	int error = BMS_OK;                     // Variable for error handling
-	int cellVoltagemV[19] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0 };  // Voltage in mV
-	int cellTemperature[38] = { 0 }; // Temperatures
+
 	int LIMIT_MAX_V = 0;
 	int LIMIT_MIN_V = 0;
 	int LIMIT_MAX_T = 0;
 	int MAX_V = 0;
 
-	uint32_t TIME_LIM_PLOT = 1000; // Interval of time for ploting BMS info in ms
-	uint32_t TIME_LIM_SEND = 500;   // Interval to send mesage in ms
-	uint32_t TIME_LIM_RECV = 3000;   // Limit time for communication in ms
-	uint32_t time_lim_plotted = TIME_LIM_PLOT; // Dont plot in the initil time because the value is null
-	uint32_t time_lim_sended = 0;      // When has been last sended
-	uint32_t time_lim_received = TIME_LIM_RECV; // When have been last received // Initialized to 1000 to wait one minute to receive the data
+
+
+	uint32_t TIME_LIM_PLOT_VOLTS = 1000; // Interval of time for ploting voltage info in ms
+	uint32_t TIME_LIM_SEND_VOLTS = 200;   // Interval to send message in ms
+	uint32_t TIME_LIM_RECV_VOLTS = 500;   // Limit time for communication in ms
+
+	uint32_t TIME_LIM_PLOT_TEMPS = 1500;   // Interval of time for ploting temperature info in ms
+	uint32_t TIME_LIM_SEND_TEMPS = 500;    // Interval to send message in ms
+	uint32_t TIME_LIM_RECV_TEMPS = 1000;  // Limit time for communication in ms
+
+	uint32_t time_lim_plotted_volts = TIME_LIM_PLOT_VOLTS; // Dont plot in the until time because the value is null
+	uint32_t time_lim_sent_volts = 0;      // When has been last sended
+	uint32_t time_lim_received_volts = TIME_LIM_RECV_VOLTS; // When have been last received
+
+	uint32_t time_lim_plotted_temps = TIME_LIM_PLOT_TEMPS;
+	uint32_t time_lim_sent_temps = 0;
+	uint32_t time_lim_received_temps = TIME_LIM_RECV_TEMPS;
+
 	uint8_t message_balancing[2] = { 0, 0 }; // Voltage in mV
 	uint8_t message_temperatures[2] = { 0, 0 };
 	uint8_t NUM_CELLS = 19;
@@ -53,8 +65,16 @@ public:
 	int MIN_T = 0;
 	int MAX_T = 0;
 
-	BMS_MOD(uint32_t _ID, int _MAXV, int _MINV, int _MAXT, uint8_t _NUMCELLS,
-			unsigned int _SHUNT, int _LAG = 0);
+	int cellVoltagemV[19] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0 };  // Voltage in mV
+	int cellTemperature[38] = { 0 }; // Temperatures
+
+
+
+	BMS_MOD(uint32_t _ID, int _MAXV, int _MINV, int _MAXT,
+			uint8_t _NUMCELLS, unsigned int _SHUNT, int _LAG_V, int _LAG_T);
+
+
 	void voltage_info(char *buffer);
 	void temperature_info(char *buffer);
 	bool parse(uint32_t id, uint8_t *buf, uint32_t t);
