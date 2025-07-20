@@ -17,11 +17,11 @@
 // INITIALIZE VARIABLES
 BMS_MOD BMS[] = {
 //New BMS - one per module with voltage and temperature readings
-		BMS_MOD(BMS_ID + 00, BMS_MAXV, BMS_MINV, BMS_MAXT, 19, BMS_SHUNT), // 3+3+3+3
-		BMS_MOD(BMS_ID + 30, BMS_MAXV, BMS_MINV, BMS_MAXT, 19, BMS_SHUNT, 50), // 3+5
-		BMS_MOD(BMS_ID + 60, BMS_MAXV, BMS_MINV, BMS_MAXT, 19, BMS_SHUNT, 100), // 5+5
-		BMS_MOD(BMS_ID + 90, BMS_MAXV, BMS_MINV, BMS_MAXT, 19, BMS_SHUNT, 150), // 5+5
-		BMS_MOD(BMS_ID + 120, BMS_MAXV, BMS_MINV, BMS_MAXT, 19, BMS_SHUNT, 200), // 5+5
+		BMS_MOD(BMS_ID + 00, BMS_MAXV, BMS_MINV, BMS_MAXT, numCells, BMS_SHUNT, 0, 55), // 3+3+3+3
+		BMS_MOD(BMS_ID + 30, BMS_MAXV, BMS_MINV, BMS_MAXT, numCells, BMS_SHUNT, 10, 155), // 3+5
+		BMS_MOD(BMS_ID + 60, BMS_MAXV, BMS_MINV, BMS_MAXT, numCells, BMS_SHUNT, 20, 255), // 5+5
+		BMS_MOD(BMS_ID + 90, BMS_MAXV, BMS_MINV, BMS_MAXT, numCells, BMS_SHUNT, 30, 355), // 5+5
+		BMS_MOD(BMS_ID + 120, BMS_MAXV, BMS_MINV, BMS_MAXT, numCells, BMS_SHUNT, 40, 455), // 5+5
 		};
 
 
@@ -86,18 +86,22 @@ void select_state() {
 	MIN_V = 4200; /// I reset the number each cycle cause if the voltages goes up again I wanna has it risen again on telemetry
 	MAX_T = 0;
 	for (int i = 0; i < BMS_N; i++) {
-		BMS[i].voltage_acum = 0;                  // For precharge
+		BMS[i].voltage_acum = 0;// For precharge
+
+
 		if (BMS[i].query_voltage(time, buffer) != BMS_OK) //I ask the BMS about voltages and cheking their states
 		{
 			//state = error;
 		}
+
 		CPU.voltage_acum += BMS[i].voltage_acum; // For precharge
 		if (BMS[i].MIN_V < MIN_V)
 			MIN_V = BMS[i].MIN_V; //Checking the minimun voltage of cell in the whole battery
 
-		//if (BMS[i].query_temperature(time, buffer) != Temperatures_OK){
-			//state = error;
-		//}
+
+		/*if (BMS[i].query_temperature(time, buffer) != Temperatures_OK){
+			state = error;
+		}*/
 
 		if (BMS[i].MAX_T > MAX_T)
 			MAX_T = BMS[i].MAX_T;
@@ -144,10 +148,10 @@ void select_state() {
 		state_air_p = 0;
 		state_precharge = 1;
 		CPU.updateState(CPU_PRECHARGE);
-		if (flag_cpu == CPU_OK) {
+		//if (flag_cpu == CPU_OK) {
 			state = transition;
-		} else if (flag_cpu == CPU_ERROR_COMMUNICATION)
-			state = error;
+		//} else if (flag_cpu == CPU_ERROR_COMMUNICATION)
+			//state = error;
 		 //else if(flag_current != Current_OK) state = error; //I take this out cause in precharge current can be very high, but probably can be uncommented,
 		break;
 	case transition:
@@ -155,10 +159,10 @@ void select_state() {
 		state_air_p = 0;
 		state_precharge = 1;
 		CPU.updateState(CPU_PRECHARGE);
-		if ((((CPU.voltage_acum)/1000) * 0.9 < CPU.DC_BUS) && (CPU.voltage_acum != 0)){
+		//if ((((CPU.voltage_acum)/1000) * 0.9 < CPU.DC_BUS) && (CPU.voltage_acum != 0)){
 			state = run; //If DC_BUS voltage is higher than 90% of battery voltage, precharge finish
-		}else if((flag_cpu == CPU_ERROR_COMMUNICATION)&&(flag_charger == 1)) state = error;
-		 else if(flag_current != Current_OK) state = error;
+		//}else if((flag_cpu == CPU_ERROR_COMMUNICATION)&&(flag_charger == 1)) state = error;
+		 //else if(flag_current != Current_OK) state = error;
 		//}
 		break;
 	case run:
@@ -175,7 +179,7 @@ void select_state() {
 		}
 		if(HAL_GPIO_ReadPin(DIGITAL1_GPIO_Port, DIGITAL1_Pin) == GPIO_PIN_RESET){ //SDC IO
 			//state = error;
-			print((char*)"DIGITAL");
+			//print((char*)"DIGITAL");
 		}
 		break;
 	case error:
