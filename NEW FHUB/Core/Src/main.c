@@ -70,35 +70,8 @@ uint16_t s2_aceleracion = 0; // Lectura del sensor 2 del pedal de aceleración
 
 FDCAN_TxHeaderTypeDef TxHeader;
 
-// Scaling variables
-uint16_t s1_scaled = 0;
-uint16_t s2_scaled = 0;
-
-FDCAN_TxHeaderTypeDef TxHeader;
-
 void ADC_Select_S1 ();
-
-// Scaling function for sensor output
-// Add this to your global variables section
-float actual_vref = 3.3f; // You may need to measure and adjust this value
-
-// Modified scaling function
-uint16_t scale_sensor_output(uint16_t raw_adc_value) {
-    // Calibration values - measure these with your actual sensor
-    uint16_t adc_min = 400;   // ADC value at 0.1V (measure this!)
-    uint16_t adc_max = 4095;  // ADC value at 3.2V (measure this!)
-
-    // Clamp to valid range
-    if (raw_adc_value < adc_min) raw_adc_value = adc_min;
-    if (raw_adc_value > adc_max) raw_adc_value = adc_max;
-
-    // Direct scaling
-    uint32_t scaled = ((uint32_t)(raw_adc_value - adc_min) * 4095) / (adc_max - adc_min);
-
-    return (uint16_t)scaled;
-}
-
-
+void ADC_Select_S2 ();
 
 /* USER CODE END 0 */
 
@@ -153,25 +126,20 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-		//ADC_Select_S1();
+		ADC_Select_S1();
 		HAL_ADC_Start(&hadc1);
 		HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
 		s1_aceleracion = HAL_ADC_GetValue(&hadc1);
 		HAL_ADC_Stop(&hadc1);
 
-		// Apply scaling to sensor 1
-		s1_scaled = scale_sensor_output(s1_aceleracion);
+		ADC_Select_S2();
+		HAL_ADC_Start(&hadc1);
+		HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+		s2_aceleracion = HAL_ADC_GetValue(&hadc1);
+		HAL_ADC_Stop(&hadc1);
 
-		HAL_Delay(50);
 
-		//ADC_Select_S1();
-		/*HAL_ADC_Start(&hadc2);
-		HAL_ADC_PollForConversion(&hadc2, HAL_MAX_DELAY);
-		s2_aceleracion = HAL_ADC_GetValue(&hadc2);
-		HAL_ADC_Stop(&hadc2);
-		HAL_Delay(50);*/
-
-		TxHeader.Identifier = 0x100;
+		TxHeader.Identifier = 0x133;
 		TxHeader.DataLength = 6;
 		TxHeader.IdType = FDCAN_STANDARD_ID;
 		TxHeader.FDFormat = FDCAN_CLASSIC_CAN;
@@ -464,6 +432,40 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+void ADC_Select_S1 (void)
+{
+	ADC_ChannelConfTypeDef sConfig = {0};
+	  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+	  */
+	  sConfig.Channel = ADC_CHANNEL_14;
+	  sConfig.Rank = ADC_REGULAR_RANK_1;
+	  sConfig.SamplingTime = ADC_SAMPLETIME_2CYCLES_5;
+	  sConfig.SingleDiff = ADC_SINGLE_ENDED;
+	  sConfig.OffsetNumber = ADC_OFFSET_NONE;
+	  sConfig.Offset = 0;
+	  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+	  {
+	    Error_Handler();
+	  }
+}
+
+void ADC_Select_S2 (void)
+{
+	ADC_ChannelConfTypeDef sConfig = {0};
+	  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+	  */
+	  sConfig.Channel = ADC_CHANNEL_15;
+	  sConfig.Rank = ADC_REGULAR_RANK_1;
+	  sConfig.SamplingTime = ADC_SAMPLETIME_2CYCLES_5;
+	  sConfig.SingleDiff = ADC_SINGLE_ENDED;
+	  sConfig.OffsetNumber = ADC_OFFSET_NONE;
+	  sConfig.Offset = 0;
+	  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+	  {
+	    Error_Handler();
+	  }
+}
 
 /* USER CODE END 4 */
 
