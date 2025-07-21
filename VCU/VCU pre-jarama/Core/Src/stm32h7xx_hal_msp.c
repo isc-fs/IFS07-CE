@@ -377,6 +377,46 @@ void HAL_FDCAN_MspInit(FDCAN_HandleTypeDef* hfdcan)
 
   /* USER CODE END FDCAN2_MspInit 1 */
   }
+  else if(hfdcan->Instance==FDCAN3)
+  {
+  /* USER CODE BEGIN FDCAN3_MspInit 0 */
+
+  /* USER CODE END FDCAN3_MspInit 0 */
+
+  /** Initializes the peripherals clock
+  */
+    PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_FDCAN;
+    PeriphClkInitStruct.FdcanClockSelection = RCC_FDCANCLKSOURCE_HSE;
+    if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
+    /* Peripheral clock enable */
+    HAL_RCC_FDCAN_CLK_ENABLED++;
+    if(HAL_RCC_FDCAN_CLK_ENABLED==1){
+      __HAL_RCC_FDCAN_CLK_ENABLE();
+    }
+
+    __HAL_RCC_GPIOG_CLK_ENABLE();
+    /**FDCAN3 GPIO Configuration
+    PG9     ------> FDCAN3_TX
+    PG10     ------> FDCAN3_RX
+    */
+    GPIO_InitStruct.Pin = GPIO_PIN_9|GPIO_PIN_10;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Alternate = GPIO_AF2_FDCAN3;
+    HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
+
+    /* FDCAN3 interrupt Init */
+    HAL_NVIC_SetPriority(FDCAN3_IT0_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(FDCAN3_IT0_IRQn);
+  /* USER CODE BEGIN FDCAN3_MspInit 1 */
+
+  /* USER CODE END FDCAN3_MspInit 1 */
+  }
 
 }
 
@@ -433,6 +473,29 @@ void HAL_FDCAN_MspDeInit(FDCAN_HandleTypeDef* hfdcan)
   /* USER CODE BEGIN FDCAN2_MspDeInit 1 */
 
   /* USER CODE END FDCAN2_MspDeInit 1 */
+  }
+  else if(hfdcan->Instance==FDCAN3)
+  {
+  /* USER CODE BEGIN FDCAN3_MspDeInit 0 */
+
+  /* USER CODE END FDCAN3_MspDeInit 0 */
+    /* Peripheral clock disable */
+    HAL_RCC_FDCAN_CLK_ENABLED--;
+    if(HAL_RCC_FDCAN_CLK_ENABLED==0){
+      __HAL_RCC_FDCAN_CLK_DISABLE();
+    }
+
+    /**FDCAN3 GPIO Configuration
+    PG9     ------> FDCAN3_TX
+    PG10     ------> FDCAN3_RX
+    */
+    HAL_GPIO_DeInit(GPIOG, GPIO_PIN_9|GPIO_PIN_10);
+
+    /* FDCAN3 interrupt DeInit */
+    HAL_NVIC_DisableIRQ(FDCAN3_IT0_IRQn);
+  /* USER CODE BEGIN FDCAN3_MspDeInit 1 */
+
+  /* USER CODE END FDCAN3_MspDeInit 1 */
   }
 
 }
