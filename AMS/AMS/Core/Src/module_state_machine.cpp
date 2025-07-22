@@ -91,7 +91,7 @@ void select_state() {
 
 		if (BMS[i].query_voltage(time, buffer) != BMS_OK) //I ask the BMS about voltages and cheking their states
 		{
-			state = error;
+			//state = error;
 		}
 
 		CPU.voltage_acum += BMS[i].voltage_acum; // For precharge
@@ -100,7 +100,7 @@ void select_state() {
 
 
 		if (BMS[i].query_temperature(time, buffer) != Temperatures_OK){
-			state = error;
+			//state = error;
 		}
 
 		if (BMS[i].MAX_T > MAX_T)
@@ -133,7 +133,7 @@ void select_state() {
 	printValue(CPU.voltage_acum);
 	print((char*)"dc bus");
 	printValue(CPU.DC_BUS);*/
-	//printValue(state);
+	printValue(state);
 	switch (state) {
 	case start:
 		state_air_n = 0;
@@ -159,11 +159,11 @@ void select_state() {
 		state_air_p = 0;
 		state_precharge = 1;
 		CPU.updateState(CPU_PRECHARGE);
-		//if ((((CPU.voltage_acum)/1000) * 0.9 < CPU.DC_BUS) && (CPU.voltage_acum != 0)){
+		if ((((CPU.voltage_acum)/1000) * 0.9 < CPU.DC_BUS) && (CPU.voltage_acum != 0)){
 			state = run; //If DC_BUS voltage is higher than 90% of battery voltage, precharge finish
 		//}else if((flag_cpu == CPU_ERROR_COMMUNICATION)&&(flag_charger == 1)) state = error;
 		 //else if(flag_current != Current_OK) state = error;
-		//}
+		}
 		break;
 	case run:
 		state_air_n = 1;

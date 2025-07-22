@@ -226,7 +226,7 @@ int BMS_MOD::query_voltage(uint32_t time, char *buffer) {
 
 	if (TIME_LIM_PLOT_VOLTS > 0 && time > time_lim_plotted_volts) {
 		time_lim_plotted_volts += TIME_LIM_PLOT_VOLTS;
-		voltage_info(buffer);
+		//voltage_info(buffer);
 	}
 
 	for (int i = 0; i < NUM_CELLS; i++) {
