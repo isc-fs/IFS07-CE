@@ -303,7 +303,7 @@ int main(void)
 
 		if (tempReadReady) {
 			DS18B20_ReadTemperatures();
-			DS18B20_StartConversion();  // Inicia nueva conversión tras lectura
+			DS18B20_StartConversion();
 		}
 
 		counter++;
@@ -316,7 +316,6 @@ int main(void)
 					commsTimer, COMMS_TIMEOUT, shuntVoltage);
 		}
 
-		//ds18b20_flag = TM_OneWire_Reset(&OneWire1);
 
 		if (commsTimer < COMMS_TIMEOUT)
 			commsTimer++;
