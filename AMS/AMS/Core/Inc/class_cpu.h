@@ -5,7 +5,7 @@
 // Date         :   03/2024
 // Name         :   class_cpu.h
 // Description  :
-// * This file is for defining the class of the connection protocols with putside
+// * This file is for defining the class of the connection protocols with the exterior
 // -----------------------------------------------------------------------------
 
 #ifndef INC_CLASS_CPU_H_
@@ -20,6 +20,7 @@
 #define CPU_PRECHARGE   1
 #define CPU_DISCONNECTED 2
 #define CPU_ERROR       3
+#define CPU_CHARGE	4
 
 class CPU_MOD {
 private:
