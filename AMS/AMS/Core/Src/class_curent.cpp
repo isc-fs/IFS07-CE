@@ -34,11 +34,11 @@ int Current_MOD::query(int time, char* buffer)
 {
     error = Current_OK;
 
-    VoltagemV = readAnalogValue();
+    VoltageADC = readAnalogValue();
 
     //printValue(VoltagemV);
 
-    if(VoltagemV < 400){
+    if(VoltageADC < 400){
     	flag_error_current = 1;
     	flag_current = 1;
     	error = 1;
@@ -49,25 +49,25 @@ int Current_MOD::query(int time, char* buffer)
     	error = Current_OK;
     }
 	
-    if(VoltagemV <=  400)
+    if(VoltageADC <=  400)
     {
      //error=Current_ERROR_Comunication;
     }
 
-    VoltageV=VoltagemV*3.3/1023; //AnalogRead function reads a value between 0-1023 (1024, 10 bits) here I get the real voltage value based on the value the function gets
+    VoltageV=VoltageADC*3.3/1023; //AnalogRead function reads a value between 0-1023 (1024, 10 bits) here I get the real voltage value based on the value the function gets
 
-    if(VoltagemV >= 2.8){
+    if(VoltageV >= 2.8){
     	flag_current = 1;
     }
 
     printnl("mV");
-    printValue(VoltagemV);
+    printValue(VoltageADC);
     printnl("V");
     printValue(VoltageV);
-    Current=((VoltageV - 2.5)/5.7)*1000;
+    
 
     //printValue(Current);
-    Current=(2.5-VoltageV)*60/0.34; //Sensitivity is 5,7 mv/A
+    Current=(2.5-VoltageV)/0.0057; //Sensitivity is 5,7 mv/A
     if(Current > C_MAX*0.8 && Current < C_MAX)
     {
         if(flag_error_current == 0) module_send_message_NoExtId_CAN1(0x500,message,1); //If current between 80 and 100% of maximun, sends alert

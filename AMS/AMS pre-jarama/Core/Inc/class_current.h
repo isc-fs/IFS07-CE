@@ -26,7 +26,7 @@ private:
   uint8_t   message[2]    = {0,0};
 
   float VoltageV = 0.0;             // Voltage in V     //All of them need to be in float, if the voltage changes from 0-5 V, if they were int, there would only be 5 possible values
-  float VoltagemV = 0.0;
+  float VoltageADC = 0.0;
   int Current =0 ;              // Current
   float offset_V=0.0;               //offset voltage
   int time;

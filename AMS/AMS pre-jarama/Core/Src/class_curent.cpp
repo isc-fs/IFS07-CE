@@ -34,11 +34,11 @@ int Current_MOD::query(int time, char* buffer)
 {
     error = Current_OK;
 
-    VoltagemV = readAnalogValue();
+    VoltageADC = readAnalogValue();
 
-    //printValue(VoltagemV);
+    //printValue(VoltageADC);
 
-    if(VoltagemV < 400){
+    if(VoltageADC < 400){
     	flag_error_current = 1;
     	flag_current = 1;
     	error = 1;
