@@ -16,6 +16,9 @@
 #define Current_ERROR_MAXIMUN_C       1
 #define Current_ERROR_Comunication    2
 
+#define CHARGE_MIN_CURRENT_ABS 300  // threshold to cutoff if charge stops suddently
+#define CHARGE_FAIL_TIMEOUT_MS 500
+
 
 class Current_MOD {
 private:
@@ -27,7 +30,7 @@ private:
 
   float VoltageV = 0.0;             // Voltage in V     //All of them need to be in float, if the voltage changes from 0-5 V, if they were int, there would only be 5 possible values
   float VoltagemV = 0.0;
-  int Current =0 ;              // Current
+  
   float offset_V=0.0;               //offset voltage
   int time;
 
@@ -44,6 +47,7 @@ public:
   int error             = 0;    // Variable for error handling //Needs to be public so it can be seen from outside the class
   int voltage_acum  = 0;
   int flag_charger = 0;
+  int Current =0 ;              // Current
 
   int flag_current = 0;
 

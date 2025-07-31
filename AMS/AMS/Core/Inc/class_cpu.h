@@ -20,7 +20,7 @@
 #define CPU_PRECHARGE   1
 #define CPU_DISCONNECTED 2
 #define CPU_ERROR       3
-#define CPU_CHARGE	4
+#define CPU_CHARGING	4
 
 class CPU_MOD {
 private:

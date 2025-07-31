@@ -48,7 +48,7 @@ int Current_MOD::query(int time, char* buffer)
     	flag_current = 0;
     	error = Current_OK;
     }
-	/*
+	
     if(VoltagemV <=  400)
     {
      //error=Current_ERROR_Comunication;
@@ -67,7 +67,7 @@ int Current_MOD::query(int time, char* buffer)
     Current=((VoltageV - 2.5)/5.7)*1000;
 
     //printValue(Current);
-    //Current=(2.5-VoltageV)*60/0.34; //Sensitivity is 5,7 mv/A
+    Current=(2.5-VoltageV)*60/0.34; //Sensitivity is 5,7 mv/A
     if(Current > C_MAX*0.8 && Current < C_MAX)
     {
         if(flag_error_current == 0) module_send_message_NoExtId_CAN1(0x500,message,1); //If current between 80 and 100% of maximun, sends alert
@@ -109,14 +109,15 @@ int Current_MOD::query(int time, char* buffer)
         module_send_message_NoExtId_CAN1(CANID, message, 2); //Sends current through CAN each interval of ms
     }
 
-// I'm gonna add the part where the info function is called
+
     if (TIME_LIM_PLOT > 0 && time > time_lim_plotted)
     {
         time_lim_plotted += TIME_LIM_PLOT;
+        info(buffer);
 
     }
-*/
-    //info(buffer);
+
+    
     return error;
 }
 

@@ -37,9 +37,8 @@ int time_sending_maxT = 0;
 CPU_MOD CPU(CPU_ID_send, CPU_ID_recv, 500); //Same with CPU, rest of vehicle
 
 int flag_charger = 0; //For knowing whether I am charging or in the car
+static uint32_t charge_current_error_counter = 0;
 
-// SEV_MOD SEVCON(SEV_ID,SEV_ID+1,SEV_ID+2,SEV_ID+3,SEV_ID+4); //Do not worry about anything of these
-// CHARGER_MOD CHARGER(CHARGER_ID_SEND, CHARGER_ID_RECV, CHARGER_MAXV, CHARGER_MAXI, CHARGER_MINI);
 
 Current_MOD current(Current_ID, Current_max); //Class for current measurement
 
@@ -69,6 +68,10 @@ void select_state() {
 	int state_precharge = 0; // 0 means open, 1 closed
 	int flag_cpu = CPU_ERROR_COMMUNICATION;
 	int flag_current = Current_ERROR_Comunication;
+
+
+	int gpio_charge = HAL_GPIO_ReadPin(GPIO_CHARGE_Port, GPIO_CHARGE_Pin); // pull-up: 1 = cargador conectado
+
 
 	/*
 	 * TIM16 -> APB2 => 264MHz
@@ -140,7 +143,11 @@ void select_state() {
 		state_air_p = 0;
 		state_precharge = 0;
 		CPU.updateState(CPU_DISCONNECTED);
-		if (flag_cpu != CPU_ERROR_COMMUNICATION)
+		if(gpio_charge == GPIO_PIN_SET){
+			state = charge;
+		}
+
+		else if (flag_cpu != CPU_ERROR_COMMUNICATION)
 			state = precharge; //If I do comunicate with the rest of the car, I go to precharge
 		break;
 	case precharge:
@@ -182,6 +189,29 @@ void select_state() {
 			//print((char*)"DIGITAL");
 		}
 		break;
+
+	case charge:
+		state_air_n = 1;
+		state_air_p = 1;
+		state_precharge = 1;
+		CPU.updateState(CPU_CHARGING);
+
+		int32_t current_act = current.Current / 1000; //Actual current in mA to check if it's charging
+
+		if(abs(current_act) < CHARGE_MIN_CURRENT_ABS){
+			if(charge_current_error_counter == 0)
+			charge_current_error_counter = HAL_GetTick();
+			else if(HAL_GetTick() - charge_current_error_counter > CHARGE_FAIL_TIMEOUT_MS)
+				state = error; //Charge has been interrupted
+		} else {
+			charge_current_error_counter = 0;
+		}
+
+		if (gpio_charge == GPIO_PIN_RESET){
+			state = start;
+			charge_current_error_counter = 0;
+		}
+
 	case error:
 		state_air_n = 0; //All relés closed
 		state_air_p = 0;
