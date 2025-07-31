@@ -70,7 +70,7 @@ void select_state() {
 	int flag_current = Current_ERROR_Comunication;
 
 
-	int gpio_charge = HAL_GPIO_ReadPin(GPIO_CHARGE_Port, GPIO_CHARGE_Pin); // pull-up: 1 = cargador conectado
+	int gpio_charge = HAL_GPIO_ReadPin(Charge_Button_GPIO_Port, Charge_Button_Pin); // pull-up: 1 = charge started
 
 
 	/*
@@ -211,6 +211,8 @@ void select_state() {
 			state = start;
 			charge_current_error_counter = 0;
 		}
+
+		break;
 
 	case error:
 		state_air_n = 0; //All relés closed

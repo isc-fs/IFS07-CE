@@ -599,18 +599,24 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, RELAY_AIR_N_Pin|RELAY_AIR_P_Pin|RELAY_PRECHARGE_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : DIGITAL1_Pin */
-  GPIO_InitStruct.Pin = DIGITAL1_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(DIGITAL1_GPIO_Port, &GPIO_InitStruct);
-
   /*Configure GPIO pin : AMS_OK_Pin */
   GPIO_InitStruct.Pin = AMS_OK_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(AMS_OK_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : DIGITAL1_Pin */
+  GPIO_InitStruct.Pin = DIGITAL1_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(DIGITAL1_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : Charge_Button_Pin */
+  GPIO_InitStruct.Pin = Charge_Button_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(Charge_Button_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : RELAY_AIR_N_Pin RELAY_AIR_P_Pin RELAY_PRECHARGE_Pin */
   GPIO_InitStruct.Pin = RELAY_AIR_N_Pin|RELAY_AIR_P_Pin|RELAY_PRECHARGE_Pin;
@@ -725,8 +731,7 @@ void Error_Handler(void)
   }
   /* USER CODE END Error_Handler_Debug */
 }
-
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
   *         where the assert_param error has occurred.

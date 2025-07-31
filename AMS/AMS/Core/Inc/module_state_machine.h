@@ -40,7 +40,7 @@
 #define RELAY_PRECHARGE 34 // 5 34
 
 // Current States available for the Finite State MAchine
-enum STATE { start, precharge, transition, run, error, charge };
+enum STATE { start, precharge, transition, run, charge, error };
 
 
 // FUNCTIONS

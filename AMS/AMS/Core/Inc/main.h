@@ -61,10 +61,12 @@ HAL_StatusTypeDef module_send_message_NoExtId_CAN1(uint32_t id, uint8_t* data, u
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define AMS_OK_Pin GPIO_PIN_13
+#define AMS_OK_GPIO_Port GPIOF
 #define DIGITAL1_Pin GPIO_PIN_9
 #define DIGITAL1_GPIO_Port GPIOE
-#define AMS_OK_Pin GPIO_PIN_7
-#define AMS_OK_GPIO_Port GPIOG
+#define Charge_Button_Pin GPIO_PIN_7
+#define Charge_Button_GPIO_Port GPIOG
 #define RELAY_AIR_N_Pin GPIO_PIN_3
 #define RELAY_AIR_N_GPIO_Port GPIOD
 #define RELAY_AIR_P_Pin GPIO_PIN_4
