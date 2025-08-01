@@ -135,8 +135,8 @@ void select_state() {
 	print((char*)"voltage acu");
 	printValue(CPU.voltage_acum);
 	print((char*)"dc bus");
-	printValue(CPU.DC_BUS);*/
-	printValue(state);
+	printValue(CPU.DC_BUS);
+	printValue(state);*/
 	switch (state) {
 	case start:
 		state_air_n = 0;
@@ -190,7 +190,7 @@ void select_state() {
 		}
 		break;
 
-	case charge:
+	case charge: {
 		state_air_n = 1;
 		state_air_p = 1;
 		state_precharge = 1;
@@ -213,6 +213,7 @@ void select_state() {
 		}
 
 		break;
+	}
 
 	case error:
 		state_air_n = 0; //All relés closed

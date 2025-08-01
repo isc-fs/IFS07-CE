@@ -60,10 +60,11 @@ int Current_MOD::query(int time, char* buffer)
     	flag_current = 1;
     }
 
+    /*
     printnl("mV");
     printValue(VoltageADC);
     printnl("V");
-    printValue(VoltageV);
+    printValue(VoltageV); */
     
 
     //printValue(Current);
@@ -113,7 +114,7 @@ int Current_MOD::query(int time, char* buffer)
     if (TIME_LIM_PLOT > 0 && time > time_lim_plotted)
     {
         time_lim_plotted += TIME_LIM_PLOT;
-        info(buffer);
+        //info(buffer);
 
     }
 

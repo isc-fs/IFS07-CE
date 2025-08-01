@@ -37,15 +37,15 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  16 .debug_macro  000175b0  00000000  00000000  00018144  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 17 .debug_line   0000ec2b  00000000  00000000  0002f6f4  2**0
+ 17 .debug_line   0000f26c  00000000  00000000  0002f6f4  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 18 .debug_str    0008c729  00000000  00000000  0003e31f  2**0
+ 18 .debug_str    0008c725  00000000  00000000  0003e960  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .comment      00000043  00000000  00000000  000caa48  2**0
+ 19 .comment      00000043  00000000  00000000  000cb085  2**0
                   CONTENTS, READONLY
- 20 .debug_frame  00003d18  00000000  00000000  000caa8c  2**2
+ 20 .debug_frame  00003d18  00000000  00000000  000cb0c8  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 21 .debug_line_str 0000005d  00000000  00000000  000ce7a4  2**0
+ 21 .debug_line_str 00000059  00000000  00000000  000cede0  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -496,7 +496,7 @@ Disassembly of section .text:
  8000606:	bf00      	nop
 
 08000608 <__gesf2>:
- 8000608:	f04f 3cff 	mov.w	ip, #4294967295	@ 0xffffffff
+ 8000608:	f04f 3cff 	mov.w	ip, #4294967295
  800060c:	e006      	b.n	800061c <__cmpsf2+0x4>
  800060e:	bf00      	nop
 
@@ -616,7 +616,7 @@ Disassembly of section .text:
  8000720:	d101      	bne.n	8000726 <__aeabi_f2uiz+0x32>
  8000722:	0242      	lsls	r2, r0, #9
  8000724:	d102      	bne.n	800072c <__aeabi_f2uiz+0x38>
- 8000726:	f04f 30ff 	mov.w	r0, #4294967295	@ 0xffffffff
+ 8000726:	f04f 30ff 	mov.w	r0, #4294967295
  800072a:	4770      	bx	lr
  800072c:	f04f 0000 	mov.w	r0, #0
  8000730:	4770      	bx	lr
@@ -4678,7 +4678,7 @@ void SPIWrite(SPI_HandleTypeDef *hspi, uint8_t cmd) {
  80020ca:	70fb      	strb	r3, [r7, #3]
 	HAL_SPI_Transmit(hspi, (uint8_t*) &cmd, 1, HAL_MAX_DELAY);
  80020cc:	1cf9      	adds	r1, r7, #3
- 80020ce:	f04f 33ff 	mov.w	r3, #4294967295	@ 0xffffffff
+ 80020ce:	f04f 33ff 	mov.w	r3, #4294967295
  80020d2:	2201      	movs	r2, #1
  80020d4:	6878      	ldr	r0, [r7, #4]
  80020d6:	f002 fadf 	bl	8004698 <HAL_SPI_Transmit>
@@ -4718,13 +4718,13 @@ void waitForADCComplete(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port,
  8002100:	f001 fe4f 	bl	8003da2 <HAL_GPIO_WritePin>
 		HAL_SPI_Transmit(hspi, &cmd, 1, HAL_MAX_DELAY);
  8002104:	f107 0117 	add.w	r1, r7, #23
- 8002108:	f04f 33ff 	mov.w	r3, #4294967295	@ 0xffffffff
+ 8002108:	f04f 33ff 	mov.w	r3, #4294967295
  800210c:	2201      	movs	r2, #1
  800210e:	68f8      	ldr	r0, [r7, #12]
  8002110:	f002 fac2 	bl	8004698 <HAL_SPI_Transmit>
 		HAL_SPI_Receive(hspi, &response, 1, HAL_MAX_DELAY);
  8002114:	f107 0116 	add.w	r1, r7, #22
- 8002118:	f04f 33ff 	mov.w	r3, #4294967295	@ 0xffffffff
+ 8002118:	f04f 33ff 	mov.w	r3, #4294967295
  800211c:	2201      	movs	r2, #1
  800211e:	68f8      	ldr	r0, [r7, #12]
  8002120:	f002 fbfe 	bl	8004920 <HAL_SPI_Receive>
@@ -4770,12 +4770,12 @@ bool readCellValues(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port,
  8002160:	f001 fe1f 	bl	8003da2 <HAL_GPIO_WritePin>
 	HAL_SPI_Transmit(hspi, tx, 2, HAL_MAX_DELAY);
  8002164:	f107 0114 	add.w	r1, r7, #20
- 8002168:	f04f 33ff 	mov.w	r3, #4294967295	@ 0xffffffff
+ 8002168:	f04f 33ff 	mov.w	r3, #4294967295
  800216c:	2202      	movs	r2, #2
  800216e:	68f8      	ldr	r0, [r7, #12]
  8002170:	f002 fa92 	bl	8004698 <HAL_SPI_Transmit>
 	HAL_SPI_Receive(hspi, buff, 19, HAL_MAX_DELAY);
- 8002174:	f04f 33ff 	mov.w	r3, #4294967295	@ 0xffffffff
+ 8002174:	f04f 33ff 	mov.w	r3, #4294967295
  8002178:	2213      	movs	r2, #19
  800217a:	6839      	ldr	r1, [r7, #0]
  800217c:	68f8      	ldr	r0, [r7, #12]
@@ -5476,13 +5476,13 @@ void configureLTC(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port,
  8002644:	f001 fbad 	bl	8003da2 <HAL_GPIO_WritePin>
 	HAL_SPI_Transmit(hspi, tx, 2, HAL_MAX_DELAY);
  8002648:	f107 0114 	add.w	r1, r7, #20
- 800264c:	f04f 33ff 	mov.w	r3, #4294967295	@ 0xffffffff
+ 800264c:	f04f 33ff 	mov.w	r3, #4294967295
  8002650:	2202      	movs	r2, #2
  8002652:	68f8      	ldr	r0, [r7, #12]
  8002654:	f002 f820 	bl	8004698 <HAL_SPI_Transmit>
 	HAL_SPI_Transmit(hspi, wrbuf, 6, HAL_MAX_DELAY);
  8002658:	f107 0118 	add.w	r1, r7, #24
- 800265c:	f04f 33ff 	mov.w	r3, #4294967295	@ 0xffffffff
+ 800265c:	f04f 33ff 	mov.w	r3, #4294967295
  8002660:	2206      	movs	r2, #6
  8002662:	68f8      	ldr	r0, [r7, #12]
  8002664:	f002 f818 	bl	8004698 <HAL_SPI_Transmit>
@@ -6477,7 +6477,7 @@ __weak HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
     HAL_NVIC_SetPriority(SysTick_IRQn, TickPriority, 0U);
  8002b24:	2200      	movs	r2, #0
  8002b26:	6879      	ldr	r1, [r7, #4]
- 8002b28:	f04f 30ff 	mov.w	r0, #4294967295	@ 0xffffffff
+ 8002b28:	f04f 30ff 	mov.w	r0, #4294967295
  8002b2c:	f000 ff67 	bl	80039fe <HAL_NVIC_SetPriority>
     uwTickPrio = TickPriority;
  8002b30:	4a06      	ldr	r2, [pc, #24]	@ (8002b4c <HAL_InitTick+0x5c>)
@@ -6568,7 +6568,7 @@ __weak void HAL_Delay(uint32_t Delay)
   /* Add a freq to guarantee minimum wait */
   if (wait < HAL_MAX_DELAY)
  8002b9a:	68fb      	ldr	r3, [r7, #12]
- 8002b9c:	f1b3 3fff 	cmp.w	r3, #4294967295	@ 0xffffffff
+ 8002b9c:	f1b3 3fff 	cmp.w	r3, #4294967295
  8002ba0:	d005      	beq.n	8002bae <HAL_Delay+0x26>
   {
     wait += (uint32_t)(uwTickFreq);
@@ -9267,7 +9267,7 @@ __STATIC_INLINE uint32_t NVIC_EncodePriority (uint32_t PriorityGroup, uint32_t P
 
   return (
            ((PreemptPriority & (uint32_t)((1UL << (PreemptPriorityBits)) - 1UL)) << SubPriorityBits) |
- 8003974:	f04f 32ff 	mov.w	r2, #4294967295	@ 0xffffffff
+ 8003974:	f04f 32ff 	mov.w	r2, #4294967295
  8003978:	69bb      	ldr	r3, [r7, #24]
  800397a:	fa02 f303 	lsl.w	r3, r2, r3
  800397e:	43da      	mvns	r2, r3
@@ -9276,7 +9276,7 @@ __STATIC_INLINE uint32_t NVIC_EncodePriority (uint32_t PriorityGroup, uint32_t P
  8003984:	697b      	ldr	r3, [r7, #20]
  8003986:	409a      	lsls	r2, r3
            ((SubPriority     & (uint32_t)((1UL << (SubPriorityBits    )) - 1UL)))
- 8003988:	f04f 31ff 	mov.w	r1, #4294967295	@ 0xffffffff
+ 8003988:	f04f 31ff 	mov.w	r1, #4294967295
  800398c:	697b      	ldr	r3, [r7, #20]
  800398e:	fa01 f303 	lsl.w	r3, r1, r3
  8003992:	43d9      	mvns	r1, r3
@@ -9321,7 +9321,7 @@ __STATIC_INLINE uint32_t SysTick_Config(uint32_t ticks)
  80039c0:	6053      	str	r3, [r2, #4]
   NVIC_SetPriority (SysTick_IRQn, (1UL << __NVIC_PRIO_BITS) - 1UL); /* set Priority for Systick Interrupt */
  80039c2:	210f      	movs	r1, #15
- 80039c4:	f04f 30ff 	mov.w	r0, #4294967295	@ 0xffffffff
+ 80039c4:	f04f 30ff 	mov.w	r0, #4294967295
  80039c8:	f7ff ff90 	bl	80038ec <__NVIC_SetPriority>
   SysTick->VAL   = 0UL;                                             /* Load the SysTick Counter Value */
  80039cc:	4b05      	ldr	r3, [pc, #20]	@ (80039e4 <SysTick_Config+0x40>)
@@ -11871,7 +11871,7 @@ HAL_StatusTypeDef HAL_SPI_Transmit(SPI_HandleTypeDef *hspi, const uint8_t *pData
  80047ec:	429a      	cmp	r2, r3
  80047ee:	d803      	bhi.n	80047f8 <HAL_SPI_Transmit+0x160>
  80047f0:	683b      	ldr	r3, [r7, #0]
- 80047f2:	f1b3 3fff 	cmp.w	r3, #4294967295	@ 0xffffffff
+ 80047f2:	f1b3 3fff 	cmp.w	r3, #4294967295
  80047f6:	d102      	bne.n	80047fe <HAL_SPI_Transmit+0x166>
  80047f8:	683b      	ldr	r3, [r7, #0]
  80047fa:	2b00      	cmp	r3, #0
@@ -11980,7 +11980,7 @@ HAL_StatusTypeDef HAL_SPI_Transmit(SPI_HandleTypeDef *hspi, const uint8_t *pData
  8004896:	429a      	cmp	r2, r3
  8004898:	d803      	bhi.n	80048a2 <HAL_SPI_Transmit+0x20a>
  800489a:	683b      	ldr	r3, [r7, #0]
- 800489c:	f1b3 3fff 	cmp.w	r3, #4294967295	@ 0xffffffff
+ 800489c:	f1b3 3fff 	cmp.w	r3, #4294967295
  80048a0:	d102      	bne.n	80048a8 <HAL_SPI_Transmit+0x210>
  80048a2:	683b      	ldr	r3, [r7, #0]
  80048a4:	2b00      	cmp	r3, #0
@@ -12316,7 +12316,7 @@ HAL_StatusTypeDef HAL_SPI_Receive(SPI_HandleTypeDef *hspi, uint8_t *pData, uint1
  8004a72:	429a      	cmp	r2, r3
  8004a74:	d803      	bhi.n	8004a7e <HAL_SPI_Receive+0x15e>
  8004a76:	683b      	ldr	r3, [r7, #0]
- 8004a78:	f1b3 3fff 	cmp.w	r3, #4294967295	@ 0xffffffff
+ 8004a78:	f1b3 3fff 	cmp.w	r3, #4294967295
  8004a7c:	d102      	bne.n	8004a84 <HAL_SPI_Receive+0x164>
  8004a7e:	683b      	ldr	r3, [r7, #0]
  8004a80:	2b00      	cmp	r3, #0
@@ -12389,7 +12389,7 @@ HAL_StatusTypeDef HAL_SPI_Receive(SPI_HandleTypeDef *hspi, uint8_t *pData, uint1
  8004ae6:	429a      	cmp	r2, r3
  8004ae8:	d803      	bhi.n	8004af2 <HAL_SPI_Receive+0x1d2>
  8004aea:	683b      	ldr	r3, [r7, #0]
- 8004aec:	f1b3 3fff 	cmp.w	r3, #4294967295	@ 0xffffffff
+ 8004aec:	f1b3 3fff 	cmp.w	r3, #4294967295
  8004af0:	d102      	bne.n	8004af8 <HAL_SPI_Receive+0x1d8>
  8004af2:	683b      	ldr	r3, [r7, #0]
  8004af4:	2b00      	cmp	r3, #0
@@ -12777,7 +12777,7 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, const uint8_t
  8004d02:	429a      	cmp	r2, r3
  8004d04:	d80d      	bhi.n	8004d22 <HAL_SPI_TransmitReceive+0x1d0>
  8004d06:	6b3b      	ldr	r3, [r7, #48]	@ 0x30
- 8004d08:	f1b3 3fff 	cmp.w	r3, #4294967295	@ 0xffffffff
+ 8004d08:	f1b3 3fff 	cmp.w	r3, #4294967295
  8004d0c:	d009      	beq.n	8004d22 <HAL_SPI_TransmitReceive+0x1d0>
       {
         hspi->State = HAL_SPI_STATE_READY;
@@ -12944,7 +12944,7 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, const uint8_t
  8004e04:	429a      	cmp	r2, r3
  8004e06:	d803      	bhi.n	8004e10 <HAL_SPI_TransmitReceive+0x2be>
  8004e08:	6b3b      	ldr	r3, [r7, #48]	@ 0x30
- 8004e0a:	f1b3 3fff 	cmp.w	r3, #4294967295	@ 0xffffffff
+ 8004e0a:	f1b3 3fff 	cmp.w	r3, #4294967295
  8004e0e:	d102      	bne.n	8004e16 <HAL_SPI_TransmitReceive+0x2c4>
  8004e10:	6b3b      	ldr	r3, [r7, #48]	@ 0x30
  8004e12:	2b00      	cmp	r3, #0
@@ -13099,7 +13099,7 @@ static HAL_StatusTypeDef SPI_WaitFlagStateUntilTimeout(SPI_HandleTypeDef *hspi, 
   {
     if (Timeout != HAL_MAX_DELAY)
  8004edc:	683b      	ldr	r3, [r7, #0]
- 8004ede:	f1b3 3fff 	cmp.w	r3, #4294967295	@ 0xffffffff
+ 8004ede:	f1b3 3fff 	cmp.w	r3, #4294967295
  8004ee2:	d050      	beq.n	8004f86 <SPI_WaitFlagStateUntilTimeout+0xe2>
     {
       if (((HAL_GetTick() - tmp_tickstart) >= tmp_timeout) || (tmp_timeout == 0U))
