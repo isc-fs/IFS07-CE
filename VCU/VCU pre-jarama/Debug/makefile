@@ -64,8 +64,8 @@ all: main-build
 main-build: VCU\ IFS06.elf secondary-outputs
 
 # Tool invocations
-VCU\ IFS06.elf VCU\ IFS06.map: $(OBJS) $(USER_OBJS) C:\IFS07-CE\VCU\VCU\ pre-jarama\STM32H733ZGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "VCU IFS06.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"C:\IFS07-CE\VCU\VCU pre-jarama\STM32H733ZGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="VCU IFS06.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+VCU\ IFS06.elf VCU\ IFS06.map: $(OBJS) $(USER_OBJS) C:\Users\RMG\Documents\Github\IFS07-CE\VCU\VCU\ pre-jarama\STM32H733ZGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "VCU IFS06.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"C:\Users\RMG\Documents\Github\IFS07-CE\VCU\VCU pre-jarama\STM32H733ZGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="VCU IFS06.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
