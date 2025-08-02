@@ -136,7 +136,8 @@ bool BMS_MOD::parse(uint32_t id, uint8_t *buf, uint32_t t) {
 						&& pos < NUM_CELLS) {
 					flag_error_volt[pos]++;
 					if (flag_error_volt[pos] >= max_flag)
-						error_volt = BMS_ERROR_VOLTS;
+						//error_volt = BMS_ERROR_VOLTS;
+						error_volt = BMS_OK;
 				} else {
 					flag_error_volt[pos] = 0;
 				}
@@ -166,7 +167,8 @@ bool BMS_MOD::parse(uint32_t id, uint8_t *buf, uint32_t t) {
 
 				cellTemperature[pos] = buf[i];
 				if (cellTemperature[pos] > LIMIT_MAX_T)
-					error_temp = BMS_ERROR_TEMP;
+					//error_temp = BMS_ERROR_TEMP;
+					error_temp = BMS_OK;
 			}
 
 		      MAX_T = cellTemperature[0];

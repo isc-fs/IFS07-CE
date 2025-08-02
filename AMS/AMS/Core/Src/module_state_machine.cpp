@@ -38,7 +38,7 @@ CPU_MOD CPU(CPU_ID_send, CPU_ID_recv, 500); //Same with CPU, rest of vehicle
 
 int flag_charger = 0; //For knowing whether I am charging or in the car
 static uint32_t charge_current_error_counter = 0;
-
+int flag_ams_ok = 0;
 
 Current_MOD current(Current_ID, Current_max); //Class for current measurement
 
@@ -83,6 +83,7 @@ void select_state() {
 	uint32_t time = HAL_GetTick();
 	int time_s = HAL_GetTick();
 
+
 	CPU.voltage_acum = 0; // For precharge
 
 
@@ -95,6 +96,7 @@ void select_state() {
 		if (BMS[i].query_voltage(time, buffer) != BMS_OK) //I ask the BMS about voltages and cheking their states
 		{
 			//state = error;
+			flag_ams_ok = 1;
 		}
 
 		CPU.voltage_acum += BMS[i].voltage_acum; // For precharge
@@ -125,8 +127,8 @@ void select_state() {
 	}
 
 
-	//flag_cpu = CPU.query(time, buffer); //Asking the rest of the car how is it
-	flag_cpu = CPU_OK;
+	flag_cpu = CPU.query(time, buffer); //Asking the rest of the car how is it
+	//flag_cpu = CPU_OK;
 
 	flag_current = current.query(time, buffer); //asking current how is it
 
@@ -196,7 +198,7 @@ void select_state() {
 		state_precharge = 1;
 		CPU.updateState(CPU_CHARGING);
 
-		int32_t current_act = current.Current / 1000; //Actual current in mA to check if it's charging
+		/*int32_t current_act = current.Current / 1000; //Actual current in mA to check if it's charging
 
 		if(abs(current_act) < CHARGE_MIN_CURRENT_ABS){
 			if(charge_current_error_counter == 0)
@@ -205,7 +207,7 @@ void select_state() {
 				state = error; //Charge has been interrupted
 		} else {
 			charge_current_error_counter = 0;
-		}
+		}*/
 
 		if (gpio_charge == GPIO_PIN_RESET){
 			state = start;
@@ -222,12 +224,7 @@ void select_state() {
 		CPU.updateState(CPU_ERROR);
 		break;
 	}
-	/*   Serial.print("State: ");
-	 Serial.println(state);
-	 Serial.print("State AIR+: ");
-	 Serial.println(state_air_n);
-	 Serial.print("Relee Prec:");
-	 Serial.println(state_precharge); */
+
 
 /*	sprintf(buffer, "\n***********************\n");
 	 print(buffer);
@@ -236,7 +233,7 @@ void select_state() {
 	 sprintf(buffer, "***********************\n");
 	 print(buffer);*/
 	HAL_GPIO_WritePin(AMS_OK_GPIO_Port, AMS_OK_Pin,
-			state_air_n ? GPIO_PIN_SET : GPIO_PIN_RESET);
+			!flag_ams_ok ? GPIO_PIN_SET : GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(RELAY_AIR_N_GPIO_Port, RELAY_AIR_N_Pin,
 			state_air_n ? GPIO_PIN_SET : GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(RELAY_AIR_P_GPIO_Port, RELAY_AIR_P_Pin,
