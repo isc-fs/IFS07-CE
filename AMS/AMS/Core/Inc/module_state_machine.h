@@ -39,11 +39,6 @@
 #define RELAY_AIR_2     35 // 5
 #define RELAY_PRECHARGE 34 // 5 34
 
-
-extern TIM_HandleTypeDef htim17;
-
-#define FAN_TIMER_ARR 10559  // ARR configurado en TIM17
-
 // Current States available for the Finite State MAchine
 enum STATE { start, precharge, transition, run, charge, error };
 
@@ -53,8 +48,6 @@ void setup_state_machine();
 void select_state();
 void parse_state(CANMsg data);
 //HAL_StatusTypeDef module_send_message_CAN1(uint32_t id, uint8_t* data, uint8_t length)
-
-
 
 
 #endif /* INC_MODULE_STATE_MACHINE_H_ */

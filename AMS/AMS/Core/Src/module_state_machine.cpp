@@ -17,17 +17,13 @@
 // INITIALIZE VARIABLES
 BMS_MOD BMS[] = {
 //New BMS - one per module with voltage and temperature readings
-		BMS_MOD(BMS_ID + 00, BMS_MAXV, BMS_MINV, BMS_MAXT, numCells, BMS_SHUNT,
-				50, 105), // 3+3+3+3
-		BMS_MOD(BMS_ID + 30, BMS_MAXV, BMS_MINV, BMS_MAXT, numCells, BMS_SHUNT,
-				100, 205), // 3+5
-		BMS_MOD(BMS_ID + 60, BMS_MAXV, BMS_MINV, BMS_MAXT, numCells, BMS_SHUNT,
-				150, 305), // 5+5
-		BMS_MOD(BMS_ID + 90, BMS_MAXV, BMS_MINV, BMS_MAXT, numCells, BMS_SHUNT,
-				200, 405), // 5+5
-		BMS_MOD(BMS_ID + 120, BMS_MAXV, BMS_MINV, BMS_MAXT, numCells, BMS_SHUNT,
-				250, 505), // 5+5
+		BMS_MOD(BMS_ID + 00, BMS_MAXV, BMS_MINV, BMS_MAXT, numCells, BMS_SHUNT, 50, 105), // 3+3+3+3
+		BMS_MOD(BMS_ID + 30, BMS_MAXV, BMS_MINV, BMS_MAXT, numCells, BMS_SHUNT, 100, 205), // 3+5
+		BMS_MOD(BMS_ID + 60, BMS_MAXV, BMS_MINV, BMS_MAXT, numCells, BMS_SHUNT, 150, 305), // 5+5
+		BMS_MOD(BMS_ID + 90, BMS_MAXV, BMS_MINV, BMS_MAXT, numCells, BMS_SHUNT, 200, 405), // 5+5
+		BMS_MOD(BMS_ID + 120, BMS_MAXV, BMS_MINV, BMS_MAXT, numCells, BMS_SHUNT, 250, 505), // 5+5
 		};
+
 
 int BMS_N = 5;
 int MIN_V = 4200;
@@ -36,6 +32,7 @@ uint8_t message_MINV[2] = { 0, 0 }; //Here I'll get the minimun voltages for sen
 int time_sending_minV = 0;      //For checking the interval I send the messages
 uint8_t message_MAXT[2] = { 0, 0 };
 int time_sending_maxT = 0;
+
 
 CPU_MOD CPU(CPU_ID_send, CPU_ID_recv, 500); //Same with CPU, rest of vehicle
 
@@ -72,8 +69,9 @@ void select_state() {
 	int flag_cpu = CPU_ERROR_COMMUNICATION;
 	int flag_current = Current_ERROR_Comunication;
 
-	int gpio_charge = HAL_GPIO_ReadPin(Charge_Button_GPIO_Port,
-			Charge_Button_Pin); // pull-up: 1 = charge started
+
+	int gpio_charge = HAL_GPIO_ReadPin(Charge_Button_GPIO_Port, Charge_Button_Pin); // pull-up: 1 = charge started
+
 
 	/*
 	 * TIM16 -> APB2 => 264MHz
@@ -85,12 +83,15 @@ void select_state() {
 	uint32_t time = HAL_GetTick();
 	int time_s = HAL_GetTick();
 
+
 	CPU.voltage_acum = 0; // For precharge
+
 
 	MIN_V = 4200; /// I reset the number each cycle cause if the voltages goes up again I wanna has it risen again on telemetry
 	MAX_T = 0;
 	for (int i = 0; i < BMS_N; i++) {
-		BMS[i].voltage_acum = 0; // For precharge
+		BMS[i].voltage_acum = 0;// For precharge
+
 
 		if (BMS[i].query_voltage(time, buffer) != BMS_OK) //I ask the BMS about voltages and cheking their states
 		{
@@ -102,7 +103,8 @@ void select_state() {
 		if (BMS[i].MIN_V < MIN_V)
 			MIN_V = BMS[i].MIN_V; //Checking the minimun voltage of cell in the whole battery
 
-		if (BMS[i].query_temperature(time, buffer) != Temperatures_OK) {
+
+		if (BMS[i].query_temperature(time, buffer) != Temperatures_OK){
 			//state = error;
 		}
 
@@ -124,18 +126,26 @@ void select_state() {
 
 	}
 
+
 	flag_cpu = CPU.query(time, buffer); //Asking the rest of the car how is it
 	//flag_cpu = CPU_OK;
 
 	flag_current = current.query(time, buffer); //asking current how is it
 
+	/*print((char*)"state");
+	printValue(state);
+	print((char*)"voltage acu");
+	printValue(CPU.voltage_acum);
+	print((char*)"dc bus");
+	printValue(CPU.DC_BUS);
+	printValue(state);*/
 	switch (state) {
 	case start:
 		state_air_n = 0;
 		state_air_p = 0;
 		state_precharge = 0;
 		CPU.updateState(CPU_DISCONNECTED);
-		if (gpio_charge == GPIO_PIN_SET) {
+		if(gpio_charge == GPIO_PIN_SET){
 			state = charge;
 		}
 
@@ -147,110 +157,111 @@ void select_state() {
 		state_air_p = 0;
 		state_precharge = 1;
 		CPU.updateState(CPU_PRECHARGE);
-		if (flag_cpu == CPU_OK) {
+		//if (flag_cpu == CPU_OK) {
 			state = transition;
-			//} else if (flag_cpu == CPU_ERROR_COMMUNICATION)
+		//} else if (flag_cpu == CPU_ERROR_COMMUNICATION)
 			//state = error;
-			//else if(flag_current != Current_OK) state = error; //I take this out cause in precharge current can be very high, but probably can be uncommented,
-			break;
-			case transition:
-			state_air_n = 1;
-			state_air_p = 0;
-			state_precharge = 1;
-			CPU.updateState(CPU_PRECHARGE);
-			if ((((CPU.voltage_acum) / 1000) * 0.9 < CPU.DC_BUS)
-					&& (CPU.voltage_acum != 0)) {
-				state = run; //If DC_BUS voltage is higher than 90% of battery voltage, precharge finish
-				//}else if((flag_cpu == CPU_ERROR_COMMUNICATION)&&(flag_charger == 1)) state = error;
-				//else if(flag_current != Current_OK) state = error;
-			}
-			break;
-			case run:
-			state_air_n = 1;
-			state_air_p = 1;
-			state_precharge = 1;
-			CPU.updateState(CPU_POWER);
-			__HAL_TIM_SET_COMPARE(&htim17, TIM_CHANNEL_1, FAN_TIMER_ARR);
-			if (flag_cpu == CPU_ERROR_COMMUNICATION) {
-				//state = error; //Lost comms with ECU
-				//print((char*) "CPU");
-			}
-			if (flag_current != Current_OK) {
-				//state = error; //If current is too high, error
-			}
+		 //else if(flag_current != Current_OK) state = error; //I take this out cause in precharge current can be very high, but probably can be uncommented,
+		break;
+	case transition:
+		state_air_n = 1;
+		state_air_p = 0;
+		state_precharge = 1;
+		CPU.updateState(CPU_PRECHARGE);
+		if ((((CPU.voltage_acum)/1000) * 0.9 < CPU.DC_BUS) && (CPU.voltage_acum != 0)){
+			state = run; //If DC_BUS voltage is higher than 90% of battery voltage, precharge finish
+		//}else if((flag_cpu == CPU_ERROR_COMMUNICATION)&&(flag_charger == 1)) state = error;
+		 //else if(flag_current != Current_OK) state = error;
+		}
+		break;
+	case run:
+		state_air_n = 1;
+		state_air_p = 1;
+		state_precharge = 1;
+		CPU.updateState(CPU_POWER);
+		if ((flag_cpu == CPU_ERROR_COMMUNICATION) && (flag_charger == 1)){
+			//state = error; //If I disconnect the charger, error
+			print((char*)"CPU");
+		}
+		if (flag_current != Current_OK){
+			//state = error; //If current is too high, error
+		}
+		if(HAL_GPIO_ReadPin(DIGITAL1_GPIO_Port, DIGITAL1_Pin) == GPIO_PIN_RESET){ //SDC IO
+			//state = error;
+			//print((char*)"DIGITAL");
+		}
+		break;
 
-			break;
+	case charge: {
+		state_air_n = 1;
+		state_air_p = 1;
+		state_precharge = 1;
+		CPU.updateState(CPU_CHARGING);
 
-			case charge:
-			{
-				state_air_n = 1;
-				state_air_p = 1;
-				state_precharge = 1;
-				CPU.updateState(CPU_CHARGING);
+		int32_t current_act = current.Current / 1000; //Actual current in mA to check if it's charging
 
-				__HAL_TIM_SET_COMPARE(&htim17, TIM_CHANNEL_1, FAN_TIMER_ARR / 4); //25% fan speed
+		/*if(abs(current_act) < CHARGE_MIN_CURRENT_ABS){
+			if(charge_current_error_counter == 0)
+			charge_current_error_counter = HAL_GetTick();
+			else if(HAL_GetTick() - charge_current_error_counter > CHARGE_FAIL_TIMEOUT_MS)
+				state = error; //Charge has been interrupted
+		} else {
+			charge_current_error_counter = 0;
+		}*/
 
-				int32_t current_act = current.Current; //Actual current in mA to check if it's charging
-
-				/*if(abs(current_act) < CHARGE_MIN_CURRENT_ABS){
-				 if(charge_current_error_counter == 0)
-				 charge_current_error_counter = HAL_GetTick();
-				 else if(HAL_GetTick() - charge_current_error_counter > CHARGE_FAIL_TIMEOUT_MS)
-				 state = error; //Charge has been interrupted
-				 } else {
-				 charge_current_error_counter = 0;
-				 }*/
-
-				if (gpio_charge == GPIO_PIN_RESET) {
-					state = start;
-					charge_current_error_counter = 0;
-				}
-
-				break;
-			}
-
-			case error:
-			state_air_n = 0; //All relés closed
-			state_air_p = 0;
-			state_precharge = 0;
-			CPU.updateState(CPU_ERROR);
-			break;
+		if (gpio_charge == GPIO_PIN_RESET){
+			state = start;
+			charge_current_error_counter = 0;
 		}
 
-		/*	sprintf(buffer, "\n***********************\n");
-		 print(buffer);
-		 sprintf(buffer, " - STATE:     %i\n", state);
-		 print(buffer);
-		 sprintf(buffer, "***********************\n");
-		 print(buffer);*/
-		HAL_GPIO_WritePin(AMS_OK_GPIO_Port, AMS_OK_Pin,
-				flag_ams_ok ? GPIO_PIN_SET : GPIO_PIN_RESET);
-		HAL_GPIO_WritePin(RELAY_AIR_N_GPIO_Port, RELAY_AIR_N_Pin,
-				state_air_n ? GPIO_PIN_SET : GPIO_PIN_RESET);
-		HAL_GPIO_WritePin(RELAY_AIR_P_GPIO_Port, RELAY_AIR_P_Pin,
-				state_air_p ? GPIO_PIN_SET : GPIO_PIN_RESET);
-		HAL_GPIO_WritePin(RELAY_PRECHARGE_GPIO_Port, RELAY_PRECHARGE_Pin,
-				state_precharge ? GPIO_PIN_SET : GPIO_PIN_RESET);
-		if (0) {
-			printnl((char*) "State: ");
-			printValue(state);
-			printnl((char*) "State AIR+: ");
-			printValue(state_air_p);
-			printnl((char*) "State AIR-: ");
-			printValue(state_air_n);
-			printnl((char*) "Relee Prec:");
-			printValue(state_precharge);
-		}
 
+		break;
 	}
+
+	case error:
+		state_air_n = 0; //All relés closed
+		state_air_p = 0;
+		state_precharge = 0;
+		CPU.updateState(CPU_ERROR);
+		break;
+	}
+
+
+/*	sprintf(buffer, "\n***********************\n");
+	 print(buffer);
+	 sprintf(buffer, " - STATE:     %i\n", state);
+	 print(buffer);
+	 sprintf(buffer, "***********************\n");
+	 print(buffer);*/
+	HAL_GPIO_WritePin(AMS_OK_GPIO_Port, AMS_OK_Pin,
+			flag_ams_ok ? GPIO_PIN_SET : GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(RELAY_AIR_N_GPIO_Port, RELAY_AIR_N_Pin,
+			state_air_n ? GPIO_PIN_SET : GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(RELAY_AIR_P_GPIO_Port, RELAY_AIR_P_Pin,
+			state_air_p ? GPIO_PIN_SET : GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(RELAY_PRECHARGE_GPIO_Port, RELAY_PRECHARGE_Pin,
+			state_precharge ? GPIO_PIN_SET : GPIO_PIN_RESET);
+	if(0){
+		printnl((char*)"State: ");
+		printValue(state);
+		printnl((char*)"State AIR+: ");
+		printValue(state_air_p);
+		printnl((char*)"State AIR-: ");
+		printValue(state_air_n);
+		printnl((char*)"Relee Prec:");
+		printValue(state_precharge);
+	}
+
+
+
 
 
 }
 
-	/*********************************************************************************************************
-	 ** Function name:           parse_state
-	 ** Descriptions:            Function for analysing the data from the CAN
-	 *********************************************************************************************************/
+/*********************************************************************************************************
+ ** Function name:           parse_state
+ ** Descriptions:            Function for analysing the data from the CAN
+ *********************************************************************************************************/
 void parse_state(CANMsg data) {
 	uint32_t time = HAL_GetTick();
 	bool flag_bms = false;
@@ -258,14 +269,14 @@ void parse_state(CANMsg data) {
 	for (int i = 0; i < BMS_N; i++) {
 		flag_bms = BMS[i].parse(data.id, &data.buf[0], time); //Checking if the message received is for  BMS
 		if (flag_bms)
-		i = BMS_N;
+			i = BMS_N;
 	}
 
 	if (!flag_bms) {
 		if (CPU.parse(data.id, &data.buf[0], time))
-		;                       //Cheking if message is for CPU
-		if (data.id == 419385575)//If message from this direction received, it is because the charger is connected and the accu is for charging
-		{
+			;                       //Cheking if message is for CPU
+		if (data.id == 419385575) //If message from this direction received, it is because the charger is connected and the accu is for charging
+				{
 			for (int i = 0; i < BMS_N; i++) {
 				BMS[i].flag_charger = 1;
 			}

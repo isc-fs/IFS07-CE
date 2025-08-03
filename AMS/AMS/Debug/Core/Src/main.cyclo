@@ -1,20 +1,19 @@
-../Core/Src/main.cpp:99:5:int main()	7
-../Core/Src/main.cpp:196:6:void SystemClock_Config()	4
-../Core/Src/main.cpp:254:6:void PeriphCommonClock_Config()	2
-../Core/Src/main.cpp:281:13:void MX_ADC1_Init()	4
-../Core/Src/main.cpp:350:13:void MX_ADC3_Init()	3
-../Core/Src/main.cpp:413:13:void MX_FDCAN1_Init()	3
-../Core/Src/main.cpp:476:13:void MX_FDCAN2_Init()	3
-../Core/Src/main.cpp:539:13:void MX_TIM17_Init()	5
-../Core/Src/main.cpp:602:13:void MX_USART2_UART_Init()	5
-../Core/Src/main.cpp:650:13:void MX_GPIO_Init()	1
-../Core/Src/main.cpp:703:6:void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef*, uint32_t)	5
-../Core/Src/main.cpp:728:19:HAL_StatusTypeDef module_send_message_CAN1(uint32_t, uint8_t*, uint8_t)	1
-../Core/Src/main.cpp:739:19:HAL_StatusTypeDef module_send_message_NoExtId_CAN1(uint32_t, uint8_t*, uint8_t)	1
-../Core/Src/main.cpp:749:19:HAL_StatusTypeDef module_send_message_CAN2(uint32_t, uint8_t*, uint8_t)	1
-../Core/Src/main.cpp:759:6:void print(char*)	1
-../Core/Src/main.cpp:764:6:void printnl(char*)	1
-../Core/Src/main.cpp:769:6:void printValue(int)	1
-../Core/Src/main.cpp:774:23:HAL_UART_StateTypeDef getUARTState()	1
-../Core/Src/main.cpp:778:7:float readAnalogValue()	1
-../Core/Src/main.cpp:795:6:void Error_Handler()	1
+../Core/Src/main.cpp:96:5:int main()	7
+../Core/Src/main.cpp:190:6:void SystemClock_Config()	4
+../Core/Src/main.cpp:248:6:void PeriphCommonClock_Config()	2
+../Core/Src/main.cpp:275:13:void MX_ADC1_Init()	4
+../Core/Src/main.cpp:344:13:void MX_ADC3_Init()	3
+../Core/Src/main.cpp:407:13:void MX_FDCAN1_Init()	3
+../Core/Src/main.cpp:470:13:void MX_FDCAN2_Init()	3
+../Core/Src/main.cpp:533:13:void MX_USART2_UART_Init()	5
+../Core/Src/main.cpp:581:13:void MX_GPIO_Init()	1
+../Core/Src/main.cpp:634:6:void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef*, uint32_t)	5
+../Core/Src/main.cpp:659:19:HAL_StatusTypeDef module_send_message_CAN1(uint32_t, uint8_t*, uint8_t)	1
+../Core/Src/main.cpp:670:19:HAL_StatusTypeDef module_send_message_NoExtId_CAN1(uint32_t, uint8_t*, uint8_t)	1
+../Core/Src/main.cpp:680:19:HAL_StatusTypeDef module_send_message_CAN2(uint32_t, uint8_t*, uint8_t)	1
+../Core/Src/main.cpp:690:6:void print(char*)	1
+../Core/Src/main.cpp:695:6:void printnl(char*)	1
+../Core/Src/main.cpp:700:6:void printValue(int)	1
+../Core/Src/main.cpp:705:23:HAL_UART_StateTypeDef getUARTState()	1
+../Core/Src/main.cpp:709:7:float readAnalogValue()	1
+../Core/Src/main.cpp:724:6:void Error_Handler()	1
