@@ -36,7 +36,7 @@ private:
 
 
 	uint32_t TIME_LIM_PLOT_VOLTS = 1000; // Interval of time for ploting voltage info in ms
-	uint32_t TIME_LIM_SEND_VOLTS = 50;   // Interval to send message in ms
+	uint32_t TIME_LIM_SEND_VOLTS = 250;   // Interval to send message in ms
 	uint32_t TIME_LIM_RECV_VOLTS = 500;   // Limit time for communication in ms
 
 	uint32_t TIME_LIM_PLOT_TEMPS = 1500;   // Interval of time for ploting temperature info in ms

@@ -138,7 +138,7 @@ bool BMS_MOD::parse(uint32_t id, uint8_t *buf, uint32_t t) {
 					flag_error_volt[pos]++;
 					if (flag_error_volt[pos] >= max_flag)
 						error_volt = BMS_ERROR_VOLTS;
-						error_volt = BMS_OK;
+						//error_volt = BMS_OK;
 					} else {
 					flag_error_volt[pos] = 0;
 				}
@@ -223,9 +223,8 @@ int BMS_MOD::query_voltage(uint32_t time, char *buffer) {
 
 
     if (time > time_lim_received_volts) {
-        if (time - time_lim_received_volts > TIME_LIM_RECV_VOLTS) {
+
             //error_volt = BMS_ERROR_COMMUNICATION;
-        }
     }
 
 	if (TIME_LIM_PLOT_VOLTS > 0 && time > time_lim_plotted_volts) {
@@ -258,7 +257,7 @@ int BMS_MOD::query_temperature(uint32_t time, char *buffer) {
 	if (time_lim_sent_temps > 0 &&
 	    time > time_lim_received_temps &&
 	    time - time_lim_received_temps > TIME_LIM_RECV_TEMPS) {
-	    //error_temp = BMS_ERROR_COMMUNICATION;
+	    error_temp = BMS_ERROR_COMMUNICATION;
 	}
 
 	if (TIME_LIM_PLOT_TEMPS > 0 && time > time_lim_plotted_temps) {

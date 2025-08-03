@@ -198,8 +198,6 @@ void select_state() {
 		state_precharge = 1;
 		CPU.updateState(CPU_CHARGING);
 
-		print((char*)"CHARGE");
-
 		int32_t current_act = current.Current / 1000; //Actual current in mA to check if it's charging
 
 		/*if(abs(current_act) < CHARGE_MIN_CURRENT_ABS){
