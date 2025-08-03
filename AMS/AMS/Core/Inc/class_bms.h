@@ -45,11 +45,11 @@ private:
 
 	uint32_t time_lim_plotted_volts = TIME_LIM_PLOT_VOLTS; // Dont plot in the until time because the value is null
 	uint32_t time_lim_sent_volts = 0;      // When has been last sended
-	uint32_t time_lim_received_volts = TIME_LIM_RECV_VOLTS; // When have been last received
+	uint32_t time_lim_received_volts = 2*TIME_LIM_RECV_VOLTS; // When have been last received
 
 	uint32_t time_lim_plotted_temps = TIME_LIM_PLOT_TEMPS;
 	uint32_t time_lim_sent_temps = 0;
-	uint32_t time_lim_received_temps = TIME_LIM_RECV_TEMPS;
+	uint32_t time_lim_received_temps = 2*TIME_LIM_RECV_TEMPS;
 
 	uint8_t message_balancing[2] = { 0, 0 }; // Voltage in mV
 	uint8_t message_temperatures[2] = { 0, 0 };
