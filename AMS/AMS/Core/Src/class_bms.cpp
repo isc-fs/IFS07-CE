@@ -132,8 +132,18 @@ bool BMS_MOD::parse(uint32_t id, uint8_t *buf, uint32_t t) {
 
 				cellVoltagemV[pos] = (buf[2 * i] << 8) | buf[2 * i + 1];
 
-				if ((cellVoltagemV[pos] > LIMIT_MAX_V
+				/*if ((cellVoltagemV[pos] > LIMIT_MAX_V
 						|| cellVoltagemV[pos] < LIMIT_MIN_V)
+						&& pos < NUM_CELLS) {
+					flag_error_volt[pos]++;
+					if (flag_error_volt[pos] >= max_flag)
+						error_volt = BMS_ERROR_VOLTS;
+						//error_volt = BMS_OK;
+					} else {
+					flag_error_volt[pos] = 0;
+				}*/
+
+				if ((cellVoltagemV[pos] > LIMIT_MAX_V )
 						&& pos < NUM_CELLS) {
 					flag_error_volt[pos]++;
 					if (flag_error_volt[pos] >= max_flag)
