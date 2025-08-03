@@ -17,7 +17,7 @@
 #define Current_ERROR_Comunication    2
 
 #define CHARGE_MIN_CURRENT_ABS 300  // threshold to cutoff if charge stops suddently
-#define CHARGE_FAIL_TIMEOUT_MS 500
+#define CHARGE_FAIL_TIMEOUT_MS 50000
 
 
 class Current_MOD {

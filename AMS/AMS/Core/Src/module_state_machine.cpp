@@ -17,11 +17,11 @@
 // INITIALIZE VARIABLES
 BMS_MOD BMS[] = {
 //New BMS - one per module with voltage and temperature readings
-		BMS_MOD(BMS_ID + 00, BMS_MAXV, BMS_MINV, BMS_MAXT, numCells, BMS_SHUNT, 0, 55), // 3+3+3+3
-		BMS_MOD(BMS_ID + 30, BMS_MAXV, BMS_MINV, BMS_MAXT, numCells, BMS_SHUNT, 10, 155), // 3+5
-		BMS_MOD(BMS_ID + 60, BMS_MAXV, BMS_MINV, BMS_MAXT, numCells, BMS_SHUNT, 20, 255), // 5+5
-		BMS_MOD(BMS_ID + 90, BMS_MAXV, BMS_MINV, BMS_MAXT, numCells, BMS_SHUNT, 30, 355), // 5+5
-		BMS_MOD(BMS_ID + 120, BMS_MAXV, BMS_MINV, BMS_MAXT, numCells, BMS_SHUNT, 40, 455), // 5+5
+		BMS_MOD(BMS_ID + 00, BMS_MAXV, BMS_MINV, BMS_MAXT, numCells, BMS_SHUNT, 50, 105), // 3+3+3+3
+		BMS_MOD(BMS_ID + 30, BMS_MAXV, BMS_MINV, BMS_MAXT, numCells, BMS_SHUNT, 100, 205), // 3+5
+		BMS_MOD(BMS_ID + 60, BMS_MAXV, BMS_MINV, BMS_MAXT, numCells, BMS_SHUNT, 150, 305), // 5+5
+		BMS_MOD(BMS_ID + 90, BMS_MAXV, BMS_MINV, BMS_MAXT, numCells, BMS_SHUNT, 200, 405), // 5+5
+		BMS_MOD(BMS_ID + 120, BMS_MAXV, BMS_MINV, BMS_MAXT, numCells, BMS_SHUNT, 250, 505), // 5+5
 		};
 
 
@@ -38,7 +38,7 @@ CPU_MOD CPU(CPU_ID_send, CPU_ID_recv, 500); //Same with CPU, rest of vehicle
 
 int flag_charger = 0; //For knowing whether I am charging or in the car
 static uint32_t charge_current_error_counter = 0;
-int flag_ams_ok = 0;
+int flag_ams_ok = 1;
 
 Current_MOD current(Current_ID, Current_max); //Class for current measurement
 
@@ -96,7 +96,7 @@ void select_state() {
 		if (BMS[i].query_voltage(time, buffer) != BMS_OK) //I ask the BMS about voltages and cheking their states
 		{
 			//state = error;
-			flag_ams_ok = 1;
+			flag_ams_ok = 0;
 		}
 
 		CPU.voltage_acum += BMS[i].voltage_acum; // For precharge
@@ -198,9 +198,11 @@ void select_state() {
 		state_precharge = 1;
 		CPU.updateState(CPU_CHARGING);
 
-		/*int32_t current_act = current.Current / 1000; //Actual current in mA to check if it's charging
+		print((char*)"CHARGE");
 
-		if(abs(current_act) < CHARGE_MIN_CURRENT_ABS){
+		int32_t current_act = current.Current / 1000; //Actual current in mA to check if it's charging
+
+		/*if(abs(current_act) < CHARGE_MIN_CURRENT_ABS){
 			if(charge_current_error_counter == 0)
 			charge_current_error_counter = HAL_GetTick();
 			else if(HAL_GetTick() - charge_current_error_counter > CHARGE_FAIL_TIMEOUT_MS)
@@ -213,6 +215,7 @@ void select_state() {
 			state = start;
 			charge_current_error_counter = 0;
 		}
+
 
 		break;
 	}
@@ -233,7 +236,7 @@ void select_state() {
 	 sprintf(buffer, "***********************\n");
 	 print(buffer);*/
 	HAL_GPIO_WritePin(AMS_OK_GPIO_Port, AMS_OK_Pin,
-			!flag_ams_ok ? GPIO_PIN_SET : GPIO_PIN_RESET);
+			flag_ams_ok ? GPIO_PIN_SET : GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(RELAY_AIR_N_GPIO_Port, RELAY_AIR_N_Pin,
 			state_air_n ? GPIO_PIN_SET : GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(RELAY_AIR_P_GPIO_Port, RELAY_AIR_P_Pin,
@@ -254,6 +257,7 @@ void select_state() {
 
 
 
+
 }
 
 /*********************************************************************************************************
@@ -265,7 +269,7 @@ void parse_state(CANMsg data) {
 	bool flag_bms = false;
 
 	for (int i = 0; i < BMS_N; i++) {
-		flag_bms = BMS[i].parse(data.id, &data.buf[0], data.time); //Checking if the message received is for  BMS
+		flag_bms = BMS[i].parse(data.id, &data.buf[0], time); //Checking if the message received is for  BMS
 		if (flag_bms)
 			i = BMS_N;
 	}

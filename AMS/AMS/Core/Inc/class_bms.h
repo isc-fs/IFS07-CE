@@ -55,7 +55,7 @@ private:
 	uint8_t message_temperatures[2] = { 0, 0 };
 	uint8_t NUM_CELLS = 19;
 
-	int max_flag = 3;
+	int max_flag = 10	;
 	int flag_error_volt[12] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 	int flag_error_temp = 0;
 

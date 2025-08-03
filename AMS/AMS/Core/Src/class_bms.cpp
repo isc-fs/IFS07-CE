@@ -23,22 +23,24 @@
  *********************************************************************************************************/
 
 BMS_MOD::BMS_MOD(uint32_t _ID, int _MAXV, int _MINV, int _MAXT,
-		uint8_t _NUMCELLS, unsigned int _SHUNT, int _LAG_V, int _LAG_T) {
+                 uint8_t _NUMCELLS, unsigned int _SHUNT, int _LAG_V, int _LAG_T) {
 	CANID = _ID;
 	LIMIT_MAX_V = _MAXV;
 	LIMIT_MIN_V = _MINV;
 	LIMIT_MAX_T = _MAXT;
 	NUM_CELLS = _NUMCELLS;
-	time_lim_plotted_volts += _LAG_V;
-	time_lim_plotted_temps += _LAG_T;
 
-	time_lim_sent_volts += _LAG_V;
-	time_lim_sent_temps += _LAG_T;
+	uint32_t now = HAL_GetTick();
 
-	time_lim_received_volts += _LAG_V;
-	time_lim_received_temps += _LAG_T;
+	time_lim_plotted_volts = now + _LAG_V;
+	time_lim_sent_volts    = now + _LAG_V;
+	time_lim_received_volts = now + TIME_LIM_RECV_VOLTS + _LAG_V;
 
+	time_lim_plotted_temps = now + _LAG_T;
+	time_lim_sent_temps    = now + _LAG_T;
+	time_lim_received_temps = now + TIME_LIM_RECV_TEMPS + _LAG_T;
 }
+
 
 /*********************************************************************************************************
  ** Function name:           info
@@ -123,7 +125,6 @@ bool BMS_MOD::parse(uint32_t id, uint8_t *buf, uint32_t t) {
 		if (m >= 1 && m <= 5) {
 			time_lim_received_volts = t + TIME_LIM_RECV_VOLTS;
 
-
 			for (int i = 0; i < 4; i++) {
 				pos = (m - 1) * 4 + i;
 				if (pos >= 19)
@@ -136,9 +137,9 @@ bool BMS_MOD::parse(uint32_t id, uint8_t *buf, uint32_t t) {
 						&& pos < NUM_CELLS) {
 					flag_error_volt[pos]++;
 					if (flag_error_volt[pos] >= max_flag)
-						//error_volt = BMS_ERROR_VOLTS;
+						error_volt = BMS_ERROR_VOLTS;
 						error_volt = BMS_OK;
-				} else {
+					} else {
 					flag_error_volt[pos] = 0;
 				}
 			}
@@ -167,8 +168,9 @@ bool BMS_MOD::parse(uint32_t id, uint8_t *buf, uint32_t t) {
 
 				cellTemperature[pos] = buf[i];
 				if (cellTemperature[pos] > LIMIT_MAX_T)
-					//error_temp = BMS_ERROR_TEMP;
-					error_temp = BMS_OK;
+					error_temp = BMS_ERROR_TEMP;
+
+
 			}
 
 		      MAX_T = cellTemperature[0];
@@ -205,8 +207,8 @@ int BMS_MOD::return_error() {
 int BMS_MOD::query_voltage(uint32_t time, char *buffer) {
 	// Shunt voltage in milivolts
 
-	message_balancing[1] = BALANCING_V & 0xFF; // Coment this two lines for disabling the balancing
-	message_balancing[0] = (BALANCING_V >> 8) & 0xFF; // Coment this two lines for disabling the balancing
+	//message_balancing[1] = BALANCING_V & 0xFF; // Coment this two lines for disabling the balancing
+	//message_balancing[0] = (BALANCING_V >> 8) & 0xFF; // Coment this two lines for disabling the balancing
 
 	if (time > time_lim_sent_volts) {
 		time_lim_sent_volts += TIME_LIM_SEND_VOLTS;
@@ -220,11 +222,11 @@ int BMS_MOD::query_voltage(uint32_t time, char *buffer) {
 	}
 
 
-	if (time_lim_sent_volts > 0 &&
-	    time > time_lim_received_volts &&
-	    time - time_lim_received_volts > TIME_LIM_RECV_VOLTS) {
-	    error_volt = BMS_ERROR_COMMUNICATION;
-	}
+    if (time > time_lim_received_volts) {
+        if (time - time_lim_received_volts > TIME_LIM_RECV_VOLTS) {
+            //error_volt = BMS_ERROR_COMMUNICATION;
+        }
+    }
 
 	if (TIME_LIM_PLOT_VOLTS > 0 && time > time_lim_plotted_volts) {
 		time_lim_plotted_volts += TIME_LIM_PLOT_VOLTS;
@@ -256,7 +258,7 @@ int BMS_MOD::query_temperature(uint32_t time, char *buffer) {
 	if (time_lim_sent_temps > 0 &&
 	    time > time_lim_received_temps &&
 	    time - time_lim_received_temps > TIME_LIM_RECV_TEMPS) {
-	    error_temp = BMS_ERROR_COMMUNICATION;
+	    //error_temp = BMS_ERROR_COMMUNICATION;
 	}
 
 	if (TIME_LIM_PLOT_TEMPS > 0 && time > time_lim_plotted_temps) {
