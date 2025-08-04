@@ -13,6 +13,7 @@
 
 #include <stdint.h>
 #include "main.h"
+#include "module_state_machine.h"
 
 #define BMS_OK                    0
 #define Temperatures_OK 		  0

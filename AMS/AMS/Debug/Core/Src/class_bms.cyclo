@@ -1,7 +1,7 @@
 ../Core/Src/class_bms.cpp:25:1:BMS_MOD::BMS_MOD(uint32_t, int, int, int, uint8_t, unsigned int, int, int)	1
-../Core/Src/class_bms.cpp:49:6:void BMS_MOD::voltage_info(char*)	4
-../Core/Src/class_bms.cpp:90:6:void BMS_MOD::temperature_info(char*)	3
-../Core/Src/class_bms.cpp:121:6:bool BMS_MOD::parse(uint32_t, uint8_t*, uint32_t)	22
-../Core/Src/class_bms.cpp:209:5:int BMS_MOD::return_error()	1
-../Core/Src/class_bms.cpp:217:5:int BMS_MOD::query_voltage(uint32_t, char*)	7
-../Core/Src/class_bms.cpp:256:5:int BMS_MOD::query_temperature(uint32_t, char*)	8
+../Core/Src/class_bms.cpp:48:6:void BMS_MOD::voltage_info(char*)	4
+../Core/Src/class_bms.cpp:89:6:void BMS_MOD::temperature_info(char*)	3
+../Core/Src/class_bms.cpp:120:6:bool BMS_MOD::parse(uint32_t, uint8_t*, uint32_t)	22
+../Core/Src/class_bms.cpp:204:5:int BMS_MOD::return_error()	1
+../Core/Src/class_bms.cpp:212:5:int BMS_MOD::query_voltage(uint32_t, char*)	8
+../Core/Src/class_bms.cpp:260:5:int BMS_MOD::query_temperature(uint32_t, char*)	8

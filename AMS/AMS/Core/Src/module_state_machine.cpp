@@ -14,6 +14,9 @@
 #include "main.h"
 #include "module_state_machine.h"
 
+extern TIM_HandleTypeDef htim17;
+
+
 // INITIALIZE VARIABLES
 BMS_MOD BMS[] = {
 //New BMS - one per module with voltage and temperature readings
@@ -32,6 +35,7 @@ uint8_t message_MINV[2] = { 0, 0 }; //Here I'll get the minimun voltages for sen
 int time_sending_minV = 0;      //For checking the interval I send the messages
 uint8_t message_MAXT[2] = { 0, 0 };
 int time_sending_maxT = 0;
+uint16_t fan_speed = 0;
 
 
 CPU_MOD CPU(CPU_ID_send, CPU_ID_recv, 500); //Same with CPU, rest of vehicle
@@ -56,6 +60,16 @@ void setup_state_machine() {
 	HAL_GPIO_WritePin(RELAY_AIR_P_GPIO_Port, RELAY_AIR_P_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(RELAY_PRECHARGE_GPIO_Port, RELAY_PRECHARGE_Pin,
 			GPIO_PIN_RESET);
+}
+
+
+/*********************************************************************************************************
+ ** Function name:           get_state
+ ** Descriptions:            get the current state
+ *********************************************************************************************************/
+
+STATE get_state() {
+    return state;
 }
 
 /*********************************************************************************************************
@@ -145,6 +159,8 @@ void select_state() {
 		state_air_p = 0;
 		state_precharge = 0;
 		CPU.updateState(CPU_DISCONNECTED);
+		fan_speed = 0;
+		__HAL_TIM_SET_COMPARE(&htim17, TIM_CHANNEL_1, fan_speed);
 		if(gpio_charge == GPIO_PIN_SET){
 			state = charge;
 		}
@@ -179,6 +195,10 @@ void select_state() {
 		state_air_p = 1;
 		state_precharge = 1;
 		CPU.updateState(CPU_POWER);
+		fan_speed = (FAN_TIMER_ARR * 75) / 100;
+
+		__HAL_TIM_SET_COMPARE(&htim17, TIM_CHANNEL_1, fan_speed);
+
 		if ((flag_cpu == CPU_ERROR_COMMUNICATION) && (flag_charger == 1)){
 			//state = error; //If I disconnect the charger, error
 			print((char*)"CPU");
@@ -197,6 +217,11 @@ void select_state() {
 		state_air_p = 1;
 		state_precharge = 1;
 		CPU.updateState(CPU_CHARGING);
+
+
+		fan_speed = (FAN_TIMER_ARR * 40) / 100;
+		__HAL_TIM_SET_COMPARE(&htim17, TIM_CHANNEL_1, fan_speed);
+
 
 		int32_t current_act = current.Current / 1000; //Actual current in mA to check if it's charging
 
@@ -223,6 +248,8 @@ void select_state() {
 		state_air_p = 0;
 		state_precharge = 0;
 		CPU.updateState(CPU_ERROR);
+		fan_speed = 0;
+		__HAL_TIM_SET_COMPARE(&htim17, TIM_CHANNEL_1, fan_speed);
 		break;
 	}
 

@@ -16,6 +16,10 @@
 #include "class_cpu.h"
 #include "class_current.h"
 
+
+extern TIM_HandleTypeDef htim17;
+#define FAN_TIMER_ARR 10559
+
 // BMS
 #define BMS_ID    0x12C
 #define BMS_MAXV  4200    // mV
@@ -39,7 +43,7 @@
 #define RELAY_AIR_2     35 // 5
 #define RELAY_PRECHARGE 34 // 5 34
 
-// Current States available for the Finite State MAchine
+// Current States available for the Finite State Machine
 enum STATE { start, precharge, transition, run, charge, error };
 
 
@@ -47,6 +51,7 @@ enum STATE { start, precharge, transition, run, charge, error };
 void setup_state_machine();
 void select_state();
 void parse_state(CANMsg data);
+STATE get_state();
 //HAL_StatusTypeDef module_send_message_CAN1(uint32_t id, uint8_t* data, uint8_t length)
 
 

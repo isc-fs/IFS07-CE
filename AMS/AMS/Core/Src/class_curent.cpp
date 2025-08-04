@@ -33,7 +33,7 @@ Current_MOD::Current_MOD(uint32_t ID, int _C_MAX)
 int Current_MOD::query(int time, char* buffer)
 {
     error = Current_OK;
-
+    /*
     VoltageADC = readAnalogValue();
 
     //printValue(VoltagemV);
@@ -60,15 +60,19 @@ int Current_MOD::query(int time, char* buffer)
     	flag_current = 1;
     }
 
-    /*
+
     printnl("mV");
     printValue(VoltageADC);
     printnl("V");
-    printValue(VoltageV); */
+    printValue(VoltageV);
     
 
     //printValue(Current);
     Current=(2.5-VoltageV)/0.0057; //Sensitivity is 5,7 mv/A
+    */
+
+    Current = readAnalogValue();
+
     if(Current > C_MAX*0.8 && Current < C_MAX)
     {
         if(flag_error_current == 0) module_send_message_NoExtId_CAN1(0x500,message,1); //If current between 80 and 100% of maximun, sends alert
