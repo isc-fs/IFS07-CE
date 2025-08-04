@@ -184,7 +184,9 @@ void select_state() {
 		state_air_p = 0;
 		state_precharge = 1;
 		CPU.updateState(CPU_PRECHARGE);
-		if (((CPU.voltage_acum)) * 0.9 < CPU.DC_BUS){
+		//if (((CPU.voltage_acum)) * 0.7 < CPU.DC_BUS){
+		printValue(CPU.DC_BUS);
+		if(CPU.DC_BUS > 200 && 	CPU.DC_BUS <500){
 			state = run; //If DC_BUS voltage is higher than 90% of battery voltage, precharge finish
 		//}else if((flag_cpu == CPU_ERROR_COMMUNICATION)&&(flag_charger == 1)) state = error;
 		 //else if(flag_current != Current_OK) state = error;
@@ -195,6 +197,7 @@ void select_state() {
 		state_air_p = 1;
 		state_precharge = 1;
 		CPU.updateState(CPU_POWER);
+		print((char*)"run");
 		fan_speed = (FAN_TIMER_ARR * 75) / 100;
 
 		__HAL_TIM_SET_COMPARE(&htim17, TIM_CHANNEL_1, fan_speed);

@@ -101,7 +101,7 @@ int CPU_MOD::query(uint32_t time, char* buffer) {
 
     if (TIME_LIM_PLOT > 0 && time > time_lim_plotted) {
         time_lim_plotted += TIME_LIM_PLOT;
-        info(buffer);
+        //info(buffer);
     }
     return error;
 }
