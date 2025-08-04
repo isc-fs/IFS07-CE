@@ -2,10 +2,12 @@
 <launchConfiguration type="com.st.stm32cube.ide.mcu.debug.launch.launchConfigurationType">
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.launch.access_port_id" value="0"/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.launch.cubeprog_external_loaders" value="[]"/>
+    <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.launch.debug_auth__pwd_enable" value="false"/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.launch.debug_auth_certif_path" value=""/>
     <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.launch.debug_auth_check_enable" value="false"/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.launch.debug_auth_key_path" value=""/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.launch.debug_auth_permission" value=""/>
+    <stringAttribute key="com.st.stm32cube.ide.mcu.debug.launch.debug_auth_pwd_file" value=""/>
     <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.launch.enable_live_expr" value="true"/>
     <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.launch.enable_swv" value="false"/>
     <intAttribute key="com.st.stm32cube.ide.mcu.debug.launch.formatVersion" value="2"/>
@@ -46,7 +48,7 @@
     <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.stlink.enable_shared_stlink" value="false"/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.stlink.frequency" value="0"/>
     <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.stlink.halt_all_on_reset" value="false"/>
-    <stringAttribute key="com.st.stm32cube.ide.mcu.debug.stlink.log_file" value="C:\Users\avela\Documents\IMAT\1º IMAT\Programación\Repositorio GitHub\IFS07-CE\VCU\VCU pre-jarama\Debug\st-link_gdbserver_log.txt"/>
+    <stringAttribute key="com.st.stm32cube.ide.mcu.debug.stlink.log_file" value="C:\IFS07-CE\VCU\VCU pre-jarama\Debug\st-link_gdbserver_log.txt"/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.stlink.low_power_debug" value="disable"/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.stlink.max_halt_delay" value="2"/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.stlink.reset_strategy" value="connect_under_reset"/>

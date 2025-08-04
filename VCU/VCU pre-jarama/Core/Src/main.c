@@ -381,7 +381,7 @@ int main(void)
 		}
 	}
 	// PRE-CHARGE
-	while (precarga_inv == 0)
+	while (precarga_inv == 0 && inv_dc_bus_voltage < 300)
 	{
 
 #if DEBUG
@@ -418,6 +418,21 @@ int main(void)
 		//if(inv_dc_bus_voltage > 60) {
 		//	precarga_inv = 1;
 		//}
+	}
+
+	TxHeader_Acu.Identifier = ID_dc_bus_voltage;
+	TxHeader_Acu.DataLength = 2;
+	TxHeader_Acu.IdType = FDCAN_EXTENDED_ID;
+	TxHeader_Acu.FDFormat = FDCAN_CLASSIC_CAN;
+	TxHeader_Acu.TxFrameType = FDCAN_DATA_FRAME;
+
+	TxData_Acu[0] = inv_dc_bus_voltage & 0xFF;
+	TxData_Acu[1] = (inv_dc_bus_voltage >> 8) & 0xFF;
+	if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, &TxHeader_Acu, TxData_Acu) == HAL_OK)
+	{
+#if DEBUG
+		//print("CAN_ACU: DC_BUS_VOLTAGE enviado a AMS");
+#endif
 	}
 
 #if DEBUG
