@@ -173,10 +173,10 @@ void select_state() {
 		state_air_p = 0;
 		state_precharge = 1;
 		CPU.updateState(CPU_PRECHARGE);
-		//if (flag_cpu == CPU_OK) {
+		if (flag_cpu == CPU_OK) {
 			state = transition;
-		//} else if (flag_cpu == CPU_ERROR_COMMUNICATION)
-			//state = error;
+		} else if (flag_cpu == CPU_ERROR_COMMUNICATION)
+			state = error;
 		 //else if(flag_current != Current_OK) state = error; //I take this out cause in precharge current can be very high, but probably can be uncommented,
 		break;
 	case transition:
@@ -184,7 +184,7 @@ void select_state() {
 		state_air_p = 0;
 		state_precharge = 1;
 		CPU.updateState(CPU_PRECHARGE);
-		if ((((CPU.voltage_acum)/1000) * 0.9 < CPU.DC_BUS) && (CPU.voltage_acum != 0)){
+		if (((CPU.voltage_acum)) * 0.9 < CPU.DC_BUS){
 			state = run; //If DC_BUS voltage is higher than 90% of battery voltage, precharge finish
 		//}else if((flag_cpu == CPU_ERROR_COMMUNICATION)&&(flag_charger == 1)) state = error;
 		 //else if(flag_current != Current_OK) state = error;
