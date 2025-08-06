@@ -790,13 +790,11 @@ float readAnalogValue(void){
 	HAL_ADC_Start(&hadc1);
 	HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
 
-	float adc_value, V_adc;
+	float adc_value;
 	int current;
 
 	adc_value = HAL_ADC_GetValue(&hadc1);
-	V_adc = (adc_value * 5 / 4095); //12 bits de resolución
-
-	current = (3020 - adc_value) * 0.14286;
+	current = ((0.2*adc_value) - 435)*1.15;
 
 	HAL_ADC_Stop(&hadc1);
 	return current;

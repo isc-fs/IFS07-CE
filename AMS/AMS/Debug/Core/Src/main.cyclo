@@ -17,4 +17,4 @@
 ../Core/Src/main.cpp:771:6:void printValue(int)	1
 ../Core/Src/main.cpp:776:23:HAL_UART_StateTypeDef getUARTState()	1
 ../Core/Src/main.cpp:780:7:float readAnalogValue()	1
-../Core/Src/main.cpp:810:6:void Error_Handler()	1
+../Core/Src/main.cpp:808:6:void Error_Handler()	1

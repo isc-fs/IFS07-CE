@@ -119,7 +119,7 @@ void select_state() {
 
 
 		if (BMS[i].query_temperature(time, buffer) != Temperatures_OK){
-			//state = error;
+			//state = error; DESCOMENTA
 		}
 
 		if (BMS[i].MAX_T > MAX_T)

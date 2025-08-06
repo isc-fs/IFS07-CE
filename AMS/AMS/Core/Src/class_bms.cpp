@@ -166,6 +166,7 @@ bool BMS_MOD::parse(uint32_t id, uint8_t *buf, uint32_t t) {
 		} else if (m >= 21 && m <= 25) {
 			// m = 21 → packet 0, m = 25 → packet 4
 			time_lim_received_temps = t + TIME_LIM_RECV_TEMPS;
+			int contador_ceros = 0;
 			if (flag_charger == 1)
 				module_send_message_CAN1(id, buf, 8);
 
@@ -175,8 +176,8 @@ bool BMS_MOD::parse(uint32_t id, uint8_t *buf, uint32_t t) {
 					break;
 
 				cellTemperature[pos] = buf[i];
-				if (cellTemperature[pos] > LIMIT_MAX_T)
-					error_temp = BMS_ERROR_TEMP;
+				//if (cellTemperature[pos] > LIMIT_MAX_T)
+				//	error_temp = BMS_ERROR_TEMP;
 
 			}
 
@@ -187,6 +188,11 @@ bool BMS_MOD::parse(uint32_t id, uint8_t *buf, uint32_t t) {
 					MAX_T = cellTemperature[i];
 				else if (cellTemperature[i] < MIN_T)
 					MIN_T = cellTemperature[i];
+				else if (cellTemperature[i] == 0)
+					contador_ceros++;
+			}
+			if (contador_ceros > 15){
+				//error_temp = BMS_ERROR_TEMP; DESCOMENTA
 			}
 
 			return true;
@@ -243,7 +249,7 @@ int BMS_MOD::query_voltage(uint32_t time, char *buffer) {
 
 	if (TIME_LIM_PLOT_VOLTS > 0 && time > time_lim_plotted_volts) {
 		time_lim_plotted_volts += TIME_LIM_PLOT_VOLTS;
-		//voltage_info(buffer);
+		voltage_info(buffer);
 	}
 
 	for (int i = 0; i < NUM_CELLS; i++) {
@@ -264,18 +270,18 @@ int BMS_MOD::query_temperature(uint32_t time, char *buffer) {
 
 		if (module_send_message_CAN2(CANID + 20, message_temperatures, 2)
 				!= HAL_OK) {
-			error_temp = BMS_ERROR_TEMP; // If the message is not sended then, error
+			//error_temp = BMS_ERROR_TEMP; // If the message is not sended then, error
 		}
 	}
 
 	if (time_lim_sent_temps > 0 && time > time_lim_received_temps
 			&& time - time_lim_received_temps > TIME_LIM_RECV_TEMPS) {
-		error_temp = BMS_ERROR_COMMUNICATION;
+		//error_temp = BMS_ERROR_COMMUNICATION;
 	}
 
 	if (TIME_LIM_PLOT_TEMPS > 0 && time > time_lim_plotted_temps) {
 		time_lim_plotted_temps += TIME_LIM_PLOT_TEMPS;
-		//temperature_info(buffer);
+		temperature_info(buffer);
 	}
 
 	return error_temp;
