@@ -89,7 +89,7 @@ static void MX_FDCAN3_Init(void);
 
 // ---------- MODOS DEBUG ----------
 #define DEBUG 1
-#define CALIBRATION 0
+#define CALIBRATION 1
 
 // ---------- FILTROS LECTURA PEDAL ACELERADOR --------
 uint32_t lecturas_s1[N_LECTURAS] = {0};
@@ -476,6 +476,12 @@ int main(void)
 	boton_arranque = 1; // VSV
 	while (boton_arranque == 0)
 	{
+		HAL_ADC_Start(&hadc1);
+		HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+
+		s_freno = HAL_ADC_GetValue(&hadc1);
+
+		HAL_ADC_Stop(&hadc1);
 
 		start_button_act = HAL_GPIO_ReadPin(START_BUTTON_GPIO_Port,
 											START_BUTTON_Pin);
@@ -1319,6 +1325,21 @@ void ADC2_Select_FR(void)
 	}
 }
 
+void ADC2_Select_Brake(void)
+{
+	ADC_ChannelConfTypeDef sConfig = {0};
+	sConfig.Channel = ADC_CHANNEL_2;
+	sConfig.Rank = ADC_REGULAR_RANK_1;
+	sConfig.SamplingTime = ADC_SAMPLETIME_2CYCLES_5;
+	sConfig.SingleDiff = ADC_SINGLE_ENDED;
+	sConfig.OffsetNumber = ADC_OFFSET_NONE;
+	sConfig.Offset = 0;
+	if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK)
+	{
+		Error_Handler();
+	}
+}
+
 void ADC2_Select_FL(void)
 {
 	ADC_ChannelConfTypeDef sConfig = {0};
@@ -1383,7 +1404,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 					if (state == 10 || state == 11)
 					{
 						error = RxData_Inv[2];
-						printHex(error);
+						//printHex(error);
 					}
 					break;
 
@@ -1501,6 +1522,12 @@ uint16_t setTorque()
 #endif
 
 #if 0
+	HAL_ADC_Start(&hadc1);
+	HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+
+	s_freno = HAL_ADC_GetValue(&hadc1);
+
+	HAL_ADC_Stop(&hadc1);
 	print("Sensor freno: ");
 	printValue(s_freno);
 #endif
