@@ -144,11 +144,11 @@ bool BMS_MOD::parse(uint32_t id, uint8_t *buf, uint32_t t) {
 
 				if ((cellVoltagemV[pos] > LIMIT_MAX_V) && pos < NUM_CELLS) {
 					flag_error_volt[pos]++;
-					if (flag_error_volt[pos] >= max_flag)
-						error_volt = BMS_ERROR_VOLTS;
+					//if (flag_error_volt[pos] >= max_flag)
+						//error_volt = BMS_ERROR_VOLTS;
 					//error_volt = BMS_OK;
-				} else {
-					flag_error_volt[pos] = 0;
+					//} else {
+					//flag_error_volt[pos] = 0;
 				}
 			}
 
@@ -166,7 +166,6 @@ bool BMS_MOD::parse(uint32_t id, uint8_t *buf, uint32_t t) {
 		} else if (m >= 21 && m <= 25) {
 			// m = 21 → packet 0, m = 25 → packet 4
 			time_lim_received_temps = t + TIME_LIM_RECV_TEMPS;
-			int contador_ceros = 0;
 			if (flag_charger == 1)
 				module_send_message_CAN1(id, buf, 8);
 
@@ -188,15 +187,24 @@ bool BMS_MOD::parse(uint32_t id, uint8_t *buf, uint32_t t) {
 					MAX_T = cellTemperature[i];
 				else if (cellTemperature[i] < MIN_T)
 					MIN_T = cellTemperature[i];
-				else if (cellTemperature[i] == 0)
-					contador_ceros++;
-			}
-			if (contador_ceros > 15){
-				//error_temp = BMS_ERROR_TEMP; DESCOMENTA
 			}
 
 			return true;
 		}
+		/*int contador_ceros = 0;
+		for (int i = 0; i < 38; i++) {
+				MIN_T = cellTemperature[i];
+			if (cellTemperature[i] == 0){
+				contador_ceros++;
+			}
+		}
+		if (contador_ceros > 15 && id!=0x380){
+			error_temp = 10;
+			modulo_que_falla = id;
+		}
+		else if (contador_ceros < 15 && id == modulo_que_falla){
+			error_temp = 0;
+		}*/
 
 	}
 
@@ -220,8 +228,8 @@ int BMS_MOD::query_voltage(uint32_t time, char *buffer) {
 
 	if (get_state() == charge) {
 		//Only balance when charging
-		message_balancing[1] = BALANCING_V & 0xFF; // Coment this two lines for disabling the balancing
-		message_balancing[0] = (BALANCING_V >> 8) & 0xFF; // Coment this two lines for disabling the balancing
+		//message_balancing[1] = BALANCING_V & 0xFF; // Coment this two lines for disabling the balancing
+		//message_balancing[0] = (BALANCING_V >> 8) & 0xFF; // Coment this two lines for disabling the balancing
 
 	} else {
 
@@ -244,7 +252,10 @@ int BMS_MOD::query_voltage(uint32_t time, char *buffer) {
 
 	if (time > time_lim_received_volts) {
 
-		//error_volt = BMS_ERROR_COMMUNICATION;
+		error_volt = BMS_ERROR_COMMUNICATION;
+	}
+	else{
+		error_volt = BMS_OK;
 	}
 
 	if (TIME_LIM_PLOT_VOLTS > 0 && time > time_lim_plotted_volts) {

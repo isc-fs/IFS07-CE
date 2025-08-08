@@ -310,8 +310,11 @@ static void MX_ADC1_Init(void)
   hadc1.Init.ConversionDataManagement = ADC_CONVERSIONDATA_DR;
   hadc1.Init.Overrun = ADC_OVR_DATA_PRESERVED;
   hadc1.Init.LeftBitShift = ADC_LEFTBITSHIFT_NONE;
-  hadc1.Init.OversamplingMode = DISABLE;
-  hadc1.Init.Oversampling.Ratio = 1;
+  hadc1.Init.OversamplingMode = ENABLE;
+  hadc1.Init.Oversampling.Ratio = 64;
+  hadc1.Init.Oversampling.RightBitShift = ADC_RIGHTBITSHIFT_6;
+  hadc1.Init.Oversampling.TriggeredMode = ADC_TRIGGEREDMODE_SINGLE_TRIGGER;
+  hadc1.Init.Oversampling.OversamplingStopReset = ADC_REGOVERSAMPLING_CONTINUED_MODE;
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
   {
     Error_Handler();
@@ -777,7 +780,7 @@ HAL_UART_StateTypeDef getUARTState(){
 	return HAL_UART_GetState(&huart2);
 }
 
-float readAnalogValue(void){
+float readCurrentValue(void){
 	/*float analogValue;
 
 	HAL_ADC_Start(&hadc3);
@@ -791,13 +794,41 @@ float readAnalogValue(void){
 	HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
 
 	float adc_value;
+	float current;
+
+	adc_value = HAL_ADC_GetValue(&hadc1);
+	//current = ((0.2*adc_value) - 435)*1.15;
+	//current = (0.2 * adc_value - 420.5)*1000;
+	current = 1.42857 * adc_value - 192.857;
+
+	//valor minimo = 2100
+
+	HAL_ADC_Stop(&hadc1);
+	printValue(current);
+	return current;
+}
+
+float readAnalogValue(void){
+	/*float analogValue;
+
+	HAL_ADC_Start(&hadc3);
+	HAL_ADC_PollForConversion(&hadc3, HAL_MAX_DELAY);
+	analogValue = HAL_ADC_GetValue(&hadc3);
+	HAL_ADC_Stop(&hadc3);
+	return analogValue;*/
+
+
+	HAL_ADC_Start(&hadc1);
+	HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+
+	uint16_t adc_value;
 	int current;
 
 	adc_value = HAL_ADC_GetValue(&hadc1);
-	current = ((0.2*adc_value) - 435)*1.15;
+	//valor minimo = 2100
 
 	HAL_ADC_Stop(&hadc1);
-	return current;
+	return adc_value;
 }
 /* USER CODE END 4 */
 

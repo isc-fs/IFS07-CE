@@ -82,7 +82,7 @@ void printnl(char uart_buffer[]);
 void printValue(int value);
 HAL_UART_StateTypeDef getUARTState();
 float readAnalogValue(void);
-
+float readCurrentValue(void);
 
 struct CANMsg {
     uint32_t id;    // CAN ID

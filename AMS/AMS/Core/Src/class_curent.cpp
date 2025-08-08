@@ -71,7 +71,28 @@ int Current_MOD::query(int time, char* buffer)
     Current=(2.5-VoltageV)/0.0057; //Sensitivity is 5,7 mv/A
     */
 
-    Current = readAnalogValue();
+    int Current1,Current2,Current3,Current4,Current5,Current6,Current7;
+    Current1 = readAnalogValue();
+    //HAL_Delay(3);
+    Current2 = readAnalogValue();
+    //HAL_Delay(3);
+    Current3 = readAnalogValue();
+    //HAL_Delay(3);
+    Current4 = readAnalogValue();
+    //HAL_Delay(3);
+    Current5 = readAnalogValue();
+    //HAL_Delay(3);
+    Current6 = readAnalogValue();
+    //HAL_Delay(3);
+    Current7 = readAnalogValue();
+    //HAL_Delay(3);
+
+    Current = (Current1+Current2+Current3+Current4+Current5+Current6+Current7)/7;
+
+    Current = 0.22727 * Current - 489.455 + 0.5;
+
+    printValue(Current);
+    //printValue(Current);
 
     if(Current > C_MAX*0.8 && Current < C_MAX)
     {
@@ -131,7 +152,6 @@ int Current_MOD::query(int time, char* buffer)
 // **Descriptions:            Function for printing the class data
 // **********************************************************************************************************
 void Current_MOD::info(char* buffer) {
-	Current = 0;
     if (getUARTState() == HAL_UART_STATE_READY) { // Send the message just if there is a serial por connected
 		sprintf(buffer, "\n***********************\n");
 		print(buffer);

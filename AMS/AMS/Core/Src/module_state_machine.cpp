@@ -42,7 +42,7 @@ CPU_MOD CPU(CPU_ID_send, CPU_ID_recv, 500); //Same with CPU, rest of vehicle
 
 int flag_charger = 0; //For knowing whether I am charging or in the car
 static uint32_t charge_current_error_counter = 0;
-int flag_ams_ok = 1;
+int flag_ams_ok = 0;
 
 Current_MOD current(Current_ID, Current_max); //Class for current measurement
 
@@ -85,7 +85,7 @@ void select_state() {
 
 
 	int gpio_charge = HAL_GPIO_ReadPin(Charge_Button_GPIO_Port, Charge_Button_Pin); // pull-up: 1 = charge started
-
+	//printValue(gpio_charge);
 
 	/*
 	 * TIM16 -> APB2 => 264MHz
@@ -96,6 +96,7 @@ void select_state() {
 
 	uint32_t time = HAL_GetTick();
 	int time_s = HAL_GetTick();
+
 
 
 	CPU.voltage_acum = 0; // For precharge
@@ -110,13 +111,25 @@ void select_state() {
 		if (BMS[i].query_voltage(time, buffer) != BMS_OK) //I ask the BMS about voltages and cheking their states
 		{
 			//state = error;
-			flag_ams_ok = 0;
+			//flag_ams_ok = 0;
 		}
 
 		CPU.voltage_acum += BMS[i].voltage_acum; // For precharge
 		if (BMS[i].MIN_V < MIN_V)
 			MIN_V = BMS[i].MIN_V; //Checking the minimun voltage of cell in the whole battery
 
+		int current_value = readAnalogValue();
+		//printValue(current_value);
+		if(MIN_V == 0 || current_value < 50 || BMS[i].query_voltage(time, buffer) != BMS_OK){
+			flag_ams_ok = 0;
+			state = error;
+			//printValue(MIN_V);
+			//printValue(current_value);
+			//printValue(BMS[i].query_voltage(time, buffer));
+		}
+		else{
+			flag_ams_ok = 1;
+		}
 
 		if (BMS[i].query_temperature(time, buffer) != Temperatures_OK){
 			//state = error; DESCOMENTA
@@ -141,6 +154,7 @@ void select_state() {
 	}
 
 
+
 	flag_cpu = CPU.query(time, buffer); //Asking the rest of the car how is it
 	//flag_cpu = CPU_OK;
 
@@ -151,8 +165,8 @@ void select_state() {
 	print((char*)"voltage acu");
 	printValue(CPU.voltage_acum);
 	print((char*)"dc bus");
-	printValue(CPU.DC_BUS);
-	printValue(state);*/
+	printValue(CPU.DC_BUS);*/
+	//printValue(state);
 	switch (state) {
 	case start:
 		state_air_n = 0;
@@ -164,7 +178,6 @@ void select_state() {
 		if(gpio_charge == GPIO_PIN_SET){
 			state = charge;
 		}
-
 		else if (flag_cpu != CPU_ERROR_COMMUNICATION)
 			state = precharge; //If I do comunicate with the rest of the car, I go to precharge
 		break;
@@ -226,7 +239,7 @@ void select_state() {
 		__HAL_TIM_SET_COMPARE(&htim17, TIM_CHANNEL_1, fan_speed);
 
 
-		int32_t current_act = current.Current / 1000; //Actual current in mA to check if it's charging
+		//int32_t current_act = current.Current / 1000; //Actual current in mA to check if it's charging
 
 		/*if(abs(current_act) < CHARGE_MIN_CURRENT_ABS){
 			if(charge_current_error_counter == 0)
@@ -251,6 +264,13 @@ void select_state() {
 		state_air_p = 0;
 		state_precharge = 0;
 		CPU.updateState(CPU_ERROR);
+		int current_value = readAnalogValue();
+		for (int i = 0; i < BMS_N; i++) {
+			if(MIN_V != 0 && current_value > 50 && BMS[i].error_volt == BMS_OK){
+				state = start;
+			}
+		}
+
 		fan_speed = 0;
 		__HAL_TIM_SET_COMPARE(&htim17, TIM_CHANNEL_1, fan_speed);
 		break;
