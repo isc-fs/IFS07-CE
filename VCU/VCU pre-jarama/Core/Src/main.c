@@ -187,6 +187,8 @@ int SMA(uint32_t *lecturas, uint8_t *index, uint32_t lectura);
 
 uint8_t flag_react = 0;
 
+uint8_t flag_r2d = 0;
+
 void SDCard_start(void);
 void logBufferToSD(void);
 void addDataToLogBuffer(char *data, uint16_t length);
@@ -511,6 +513,7 @@ int main(void)
 #endif
 #if !CALIBRATION
 
+	flag_r2d = 1;
 	HAL_GPIO_WritePin(RTDS_GPIO_Port, RTDS_Pin, GPIO_PIN_SET); // Enciende RTDS
 	HAL_Delay(2000);
 	HAL_GPIO_WritePin(RTDS_GPIO_Port, RTDS_Pin, GPIO_PIN_RESET); // Apaga RTDS
@@ -1684,7 +1687,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 		//printHex(state);
 		// Estado TORQUE
-		if (state == 4 || state == 6)
+		if ((state == 4 || state == 6) && flag_r2d == 1)
 		{ // Si no hay que reactivar el coche manda siempre torque
 
 			TxHeader_Inv.Identifier = RX_SETPOINT_1;
@@ -1713,17 +1716,19 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 #if DEBUG
 			//print("state: standby");
 #endif
+			if (flag_r2d == 1){
+				flag_react = 0;
+				// Estado READY inversor
+				TxHeader_Inv.Identifier = RX_SETPOINT_1;
+				TxHeader_Inv.DataLength = 3;
+				TxHeader_Inv.IdType = FDCAN_STANDARD_ID;
 
-			flag_react = 0;
-			// Estado READY inversor
-			TxHeader_Inv.Identifier = RX_SETPOINT_1;
-			TxHeader_Inv.DataLength = 3;
-			TxHeader_Inv.IdType = FDCAN_STANDARD_ID;
+				TxData_Inv[0] = 0x0;
+				TxData_Inv[1] = 0x0;
+				TxData_Inv[2] = 0x4;
+				HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader_Inv, TxData_Inv);
+			}
 
-			TxData_Inv[0] = 0x0;
-			TxData_Inv[1] = 0x0;
-			TxData_Inv[2] = 0x4;
-			HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader_Inv, TxData_Inv);
 
 			// while (state != 4) {
 
@@ -1734,17 +1739,19 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 #if DEBUG
 			print("state: ready");
 #endif
-			TxHeader_Inv.Identifier = 0x362;
-			TxHeader_Inv.DataLength = 4;
+			if (flag_r2d == 1){
+				TxHeader_Inv.Identifier = 0x362;
+				TxHeader_Inv.DataLength = 4;
 
-			real_torque = 0;
+				real_torque = 0;
 
-			TxData_Inv[0] = 0x0;
-			TxData_Inv[1] = 0x0;
-			TxData_Inv[2] = real_torque;
-			TxData_Inv[3] = 0x0;
-			HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader_Inv, TxData_Inv);
-			flag_react = 0; // Reactivado
+				TxData_Inv[0] = 0x0;
+				TxData_Inv[1] = 0x0;
+				TxData_Inv[2] = real_torque;
+				TxData_Inv[3] = 0x0;
+				HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader_Inv, TxData_Inv);
+				flag_react = 0; // Reactivado
+			}
 
 			break;
 		case 6:

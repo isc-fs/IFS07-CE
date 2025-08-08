@@ -73,7 +73,7 @@
 #define DELAY_CONFIG 100
 #define DELAY_CAN_SEND 10 //Cambiado de 0
 
-#define UMBRAL_FRENO  800 // Valor léido del ADC a partir del cual se considera que el pedal de freno ha sido pulsado
+#define UMBRAL_FRENO  1000 // Valor léido del ADC a partir del cual se considera que el pedal de freno ha sido pulsado
 #define UMBRAL_FRENO_APPS 3000
 
 //Filtro sensores acelerador
