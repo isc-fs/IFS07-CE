@@ -42,7 +42,7 @@ CPU_MOD CPU(CPU_ID_send, CPU_ID_recv, 500); //Same with CPU, rest of vehicle
 
 int flag_charger = 0; //For knowing whether I am charging or in the car
 static uint32_t charge_current_error_counter = 0;
-int flag_ams_ok = 0;
+int flag_ams_ok = 1;
 
 Current_MOD current(Current_ID, Current_max); //Class for current measurement
 
@@ -166,7 +166,7 @@ void select_state() {
 	printValue(CPU.voltage_acum);
 	print((char*)"dc bus");
 	printValue(CPU.DC_BUS);*/
-	printValue(state);
+	//printValue(state);
 	switch (state) {
 	case start:
 		state_air_n = 0;
@@ -178,7 +178,7 @@ void select_state() {
 		if(gpio_charge == GPIO_PIN_SET){
 			//state = charge;
 		}
-		else if (flag_cpu != CPU_ERROR_COMMUNICATION)
+		if (flag_cpu != CPU_ERROR_COMMUNICATION)
 			state = precharge; //If I do comunicate with the rest of the car, I go to precharge
 		break;
 	case precharge:
@@ -189,7 +189,7 @@ void select_state() {
 		if (flag_cpu == CPU_OK) {
 			state = transition;
 		} else if (flag_cpu == CPU_ERROR_COMMUNICATION)
-			state = error;
+			//state = error;
 		 //else if(flag_current != Current_OK) state = error; //I take this out cause in precharge current can be very high, but probably can be uncommented,
 		break;
 	case transition:
@@ -198,8 +198,8 @@ void select_state() {
 		state_precharge = 1;
 		CPU.updateState(CPU_PRECHARGE);
 		//if (((CPU.voltage_acum)) * 0.7 < CPU.DC_BUS){
-		printValue(CPU.DC_BUS);
-		if(CPU.DC_BUS > 200 && 	CPU.DC_BUS <500){
+		//printValue(CPU.DC_BUS);
+		if(CPU.DC_BUS > 200 && 	CPU.DC_BUS < 500){
 			state = run; //If DC_BUS voltage is higher than 90% of battery voltage, precharge finish
 		//}else if((flag_cpu == CPU_ERROR_COMMUNICATION)&&(flag_charger == 1)) state = error;
 		 //else if(flag_current != Current_OK) state = error;
@@ -231,7 +231,7 @@ void select_state() {
 	case charge: {
 		state_air_n = 1;
 		state_air_p = 1;
-		state_precharge = 1;
+		state_precharge = 0;
 		CPU.updateState(CPU_CHARGING);
 
 
@@ -291,7 +291,7 @@ void select_state() {
 			state_air_p ? GPIO_PIN_SET : GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(RELAY_PRECHARGE_GPIO_Port, RELAY_PRECHARGE_Pin,
 			state_precharge ? GPIO_PIN_SET : GPIO_PIN_RESET);
-	if(0){
+	if(1){
 		printnl((char*)"State: ");
 		printValue(state);
 		printnl((char*)"State AIR+: ");

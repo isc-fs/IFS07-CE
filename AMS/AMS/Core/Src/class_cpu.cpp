@@ -69,7 +69,7 @@ bool CPU_MOD::parse(uint32_t id, uint8_t* buf, uint32_t t) {
         if (DC_BUS > 280) { //(DC_BUS>0.9*voltage_acum)
             error = CPU_BUS_LINE_OK;
             if (module_send_message_CAN1(CANID_send, currentState, 1) != HAL_OK){
-                error = CPU_ERROR_COMMUNICATION;
+                //error = CPU_ERROR_COMMUNICATION;
                 print((char*)"error message");
             }
 
@@ -97,7 +97,7 @@ int CPU_MOD::query(uint32_t time, char* buffer) {
         time_lim_sended += TIME_LIM_SEND;
     }
     if (time > time_lim_received)
-        error = CPU_ERROR_COMMUNICATION; ///////Cheking if everything is alright each time
+        //error = CPU_ERROR_COMMUNICATION; ///////Cheking if everything is alright each time
 
     if (TIME_LIM_PLOT > 0 && time > time_lim_plotted) {
         time_lim_plotted += TIME_LIM_PLOT;
