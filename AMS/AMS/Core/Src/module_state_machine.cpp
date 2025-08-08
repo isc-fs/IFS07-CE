@@ -121,8 +121,8 @@ void select_state() {
 		int current_value = readAnalogValue();
 		//printValue(current_value);
 		if(MIN_V == 0 || current_value < 50 || BMS[i].query_voltage(time, buffer) != BMS_OK){
-			flag_ams_ok = 0;
-			state = error;
+			//flag_ams_ok = 0;
+			//state = error;
 			//printValue(MIN_V);
 			//printValue(current_value);
 			//printValue(BMS[i].query_voltage(time, buffer));
@@ -166,7 +166,7 @@ void select_state() {
 	printValue(CPU.voltage_acum);
 	print((char*)"dc bus");
 	printValue(CPU.DC_BUS);*/
-	//printValue(state);
+	printValue(state);
 	switch (state) {
 	case start:
 		state_air_n = 0;
@@ -176,7 +176,7 @@ void select_state() {
 		fan_speed = 0;
 		__HAL_TIM_SET_COMPARE(&htim17, TIM_CHANNEL_1, fan_speed);
 		if(gpio_charge == GPIO_PIN_SET){
-			state = charge;
+			//state = charge;
 		}
 		else if (flag_cpu != CPU_ERROR_COMMUNICATION)
 			state = precharge; //If I do comunicate with the rest of the car, I go to precharge

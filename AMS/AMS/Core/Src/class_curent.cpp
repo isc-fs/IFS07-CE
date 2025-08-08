@@ -91,7 +91,7 @@ int Current_MOD::query(int time, char* buffer)
 
     Current = 0.22727 * Current - 489.455 + 0.5;
 
-    printValue(Current);
+    //printValue(Current);
     //printValue(Current);
 
     if(Current > C_MAX*0.8 && Current < C_MAX)
