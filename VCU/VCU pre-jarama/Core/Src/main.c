@@ -89,7 +89,7 @@ static void MX_FDCAN3_Init(void);
 
 // ---------- MODOS DEBUG ----------
 #define DEBUG 1
-#define CALIBRATION 1
+#define CALIBRATION 0
 
 // ---------- FILTROS LECTURA PEDAL ACELERADOR --------
 uint32_t lecturas_s1[N_LECTURAS] = {0};
@@ -414,10 +414,7 @@ int main(void)
 			print("CAN_ACU: Precarga correcta");
 #endif
 		}
-		// VSV
-		//if(inv_dc_bus_voltage > 60) {
-		//	precarga_inv = 1;
-		//}
+
 	}
 
 	TxHeader_Acu.Identifier = ID_dc_bus_voltage;
@@ -473,7 +470,6 @@ int main(void)
 
 #if !CALIBRATION
 	// Espera a que se pulse el botón de arranque mientras se pisa el freno
-	boton_arranque = 1; // VSV
 	while (boton_arranque == 0)
 	{
 		HAL_ADC_Start(&hadc1);
@@ -485,7 +481,7 @@ int main(void)
 
 		start_button_act = HAL_GPIO_ReadPin(START_BUTTON_GPIO_Port,
 											START_BUTTON_Pin);
-		if (start_button_act == 1 && start_button_ant == 0)
+		if (start_button_act == 1)
 		{
 
 #if DEBUG
@@ -1274,7 +1270,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin : START_BUTTON_Pin */
   GPIO_InitStruct.Pin = START_BUTTON_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(START_BUTTON_GPIO_Port, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
@@ -1553,7 +1549,7 @@ uint16_t setTorque()
 		s2_aceleracion_aux = 100;
 	}
 
-#if 0
+#if 1
 	print("Sensor % 1: ");
 	printValue(s1_aceleracion_aux);
 	print("");
@@ -1614,7 +1610,7 @@ uint16_t setTorque()
 
 	if (flag_EV_2_3 || flag_T11_8_9)
 	{
-		// torque_total = 0;
+		torque_total = 0;
 	}
 
 #if 0
