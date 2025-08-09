@@ -177,9 +177,6 @@ void select_state() {
 	//printValue(state);
 	switch (state) {
 	case start:
-		state_air_n = 0;
-		state_air_p = 0;
-		state_precharge = 0;
 		CPU.updateState(CPU_DISCONNECTED);
 		fan_speed = 0;
 		__HAL_TIM_SET_COMPARE(&htim17, TIM_CHANNEL_1, fan_speed);
@@ -327,6 +324,10 @@ void parse_state(CANMsg data) {
 	if (data.id == 0x600){
 		flag_start_button = 1;
 	}
+
+	if (data.id == 0x100){
+		CPU.DC_BUS = (int)((data.buf[1]<<8)|data.buf[0]); // This direction sends the voltage in DC_BUS
+	}
 	uint32_t time = HAL_GetTick();
 	bool flag_bms = false;
 
@@ -335,6 +336,7 @@ void parse_state(CANMsg data) {
 		if (flag_bms)
 			i = BMS_N;
 	}
+
 
 	if (!flag_bms) {
 		if (CPU.parse(data.id, &data.buf[0], time))
