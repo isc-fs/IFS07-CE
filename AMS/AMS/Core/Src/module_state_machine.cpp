@@ -219,6 +219,9 @@ void select_state() {
 		state_precharge = 1;
 		CPU.updateState(CPU_POWER);
 		print((char*)"run");
+		if(CPU.DC_BUS < 60){
+			state = start;
+		}
 		fan_speed = (FAN_TIMER_ARR * 75) / 100;
 
 		__HAL_TIM_SET_COMPARE(&htim17, TIM_CHANNEL_1, fan_speed);
@@ -321,7 +324,7 @@ void select_state() {
  ** Descriptions:            Function for analysing the data from the CAN
  *********************************************************************************************************/
 void parse_state(CANMsg data) {
-	if (data.id == 0x500){
+	if (data.id == 0x600){
 		flag_start_button = 1;
 	}
 	uint32_t time = HAL_GetTick();
