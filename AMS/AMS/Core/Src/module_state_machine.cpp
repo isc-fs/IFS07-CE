@@ -184,7 +184,7 @@ void select_state() {
 			//state = charge;
 		}
 		if (flag_cpu != CPU_ERROR_COMMUNICATION && flag_start_button == 1)
-			state = precharge; //If I do comunicate with the rest of the car, I go to precharge
+			state = transition; //If I do comunicate with the rest of the car, I go to precharge
 		break;
 	case precharge:
 		state_air_n = 1;
@@ -192,7 +192,7 @@ void select_state() {
 		state_precharge = 1;
 		CPU.updateState(CPU_PRECHARGE);
 		if (flag_cpu == CPU_OK) {
-			state = transition;
+			//state = transition;
 		} else if (flag_cpu == CPU_ERROR_COMMUNICATION)
 			//state = error;
 		 //else if(flag_current != Current_OK) state = error; //I take this out cause in precharge current can be very high, but probably can be uncommented,
@@ -204,6 +204,9 @@ void select_state() {
 		CPU.updateState(CPU_PRECHARGE);
 		//if (((CPU.voltage_acum)) * 0.7 < CPU.DC_BUS){
 		//printValue(CPU.DC_BUS);
+		if(flag_start_button == 0 && CPU.DC_BUS == 0){
+			state = start;
+		}
 		if(CPU.DC_BUS > 200 && 	CPU.DC_BUS < 500){
 			state = run; //If DC_BUS voltage is higher than 90% of battery voltage, precharge finish
 		//}else if((flag_cpu == CPU_ERROR_COMMUNICATION)&&(flag_charger == 1)) state = error;
@@ -217,9 +220,9 @@ void select_state() {
 		CPU.updateState(CPU_POWER);
 		//print((char*)"run");
 		printValue(CPU.DC_BUS);
-		flag_start_button = 0;
 		if(CPU.DC_BUS < 60){
 			state = start;
+			flag_start_button = 0;
 		}
 		fan_speed = (FAN_TIMER_ARR * 75) / 100;
 
@@ -324,7 +327,7 @@ void select_state() {
  *********************************************************************************************************/
 void parse_state(CANMsg data) {
 	if (data.id == 0x600){
-		flag_start_button = 1;
+		flag_start_button = data.buf[0];
 	}
 
 	if (data.id == 0x100){
