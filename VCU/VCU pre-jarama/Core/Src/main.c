@@ -348,19 +348,14 @@ int main(void)
 	print("Solicitar tensión inversor");
 #endif
 
-	/*
-	 * TIM16 -> APB2 => 264MHzw
-	 * 10 ms interruption => 10ms * 264MHz = 2640000
-	 * preescalado 264 (por ejemplo)
-	 * timer count = 2640000 / 264 = 10000
-	 */
-	HAL_TIM_Base_Start_IT(&htim16);
-
+#if (CALIBRATION)
+	config_inv_lectura_v = 1;
+#endif
 
 	// Espera ACK inversor (DC bus)
 	while (config_inv_lectura_v == 0)
 	{
-		//print("Solicitar tensión inversor");
+		print("Solicitar tensión inversor");
 		if (config_inv_lectura_v == 1)
 		{
 
@@ -372,16 +367,6 @@ int main(void)
 
 #if !CALIBRATION
 
-	// Estado STAND BY inversor
-	while (state != 3)
-	{
-		if (state == 3)
-		{
-#if DEBUG
-			print("Precarga");
-#endif
-		}
-	}
 	// PRE-CHARGE
 	while (precarga_inv == 0 && inv_dc_bus_voltage < 300)
 	{
@@ -434,6 +419,85 @@ int main(void)
 #endif
 	}
 
+#endif
+
+#if !CALIBRATION
+	// Espera a que se pulse el botón de arranque mientras se pisa el freno
+	while (boton_arranque == 0)
+	{
+		HAL_ADC_Start(&hadc1);
+		HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+
+		s_freno = HAL_ADC_GetValue(&hadc1);
+
+		HAL_ADC_Stop(&hadc1);
+
+		printValue(s_freno);
+
+		start_button_act = HAL_GPIO_ReadPin(START_BUTTON_GPIO_Port,
+											START_BUTTON_Pin);
+
+		printValue(start_button_act);
+		print("Botón Start + Freno:");
+		if (start_button_act == 1)
+		{
+
+#if DEBUG
+			printValue(s_freno);
+#endif
+			if (s_freno > 900)
+			{
+				boton_arranque = 1;
+#if DEBUG
+				print("Coche arrancado correctamente");
+#endif
+			}
+			else
+			{
+#if DEBUG
+				print("Pulsar freno para arrancar");
+#endif
+			}
+		}
+	}
+#endif
+
+	// Activar READY-TO-DRIVE-SOUND (RTDS) durante 2s
+#if DEBUG
+	print("RTDS sonando");
+#endif
+#if !CALIBRATION
+
+	flag_r2d = 1;
+	HAL_GPIO_WritePin(RTDS_GPIO_Port, RTDS_Pin, GPIO_PIN_SET); // Enciende RTDS
+	HAL_Delay(2000);
+	HAL_GPIO_WritePin(RTDS_GPIO_Port, RTDS_Pin, GPIO_PIN_RESET); // Apaga RTDS
+
+#endif
+
+#if DEBUG
+	print("RTDS apagado");
+#endif
+
+	/*
+	 * TIM16 -> APB2 => 264MHzw
+	 * 10 ms interruption => 10ms * 264MHz = 2640000
+	 * preescalado 264 (por ejemplo)
+	 * timer count = 2640000 / 264 = 10000
+	 */
+	HAL_TIM_Base_Start_IT(&htim16);
+
+	// Estado STAND BY inversor
+	while (state != 3)
+	{
+		if (state == 3)
+		{
+#if DEBUG
+			print("Precarga");
+#endif
+		}
+	}
+
 #if DEBUG
 	print("state : stand by");
 #endif
@@ -468,61 +532,7 @@ int main(void)
 	print("state: ready");
 #endif
 
-#endif
 
-#if !CALIBRATION
-	// Espera a que se pulse el botón de arranque mientras se pisa el freno
-	while (boton_arranque == 0)
-	{
-		HAL_ADC_Start(&hadc1);
-		HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-
-		s_freno = HAL_ADC_GetValue(&hadc1);
-
-		HAL_ADC_Stop(&hadc1);
-
-		start_button_act = HAL_GPIO_ReadPin(START_BUTTON_GPIO_Port,
-											START_BUTTON_Pin);
-		if (start_button_act == 1)
-		{
-
-#if DEBUG
-			print("Botón Start + Freno:");
-			printValue(s_freno);
-#endif
-			if (s_freno > UMBRAL_FRENO)
-			{
-				boton_arranque = 1;
-#if DEBUG
-				print("Coche arrancado correctamente");
-#endif
-			}
-			else
-			{
-#if DEBUG
-				print("Pulsar freno para arrancar");
-#endif
-			}
-		}
-	}
-#endif
-
-	// Activar READY-TO-DRIVE-SOUND (RTDS) durante 2s
-#if DEBUG
-	print("RTDS sonando");
-#endif
-#if !CALIBRATION
-
-	flag_r2d = 1;
-	HAL_GPIO_WritePin(RTDS_GPIO_Port, RTDS_Pin, GPIO_PIN_SET); // Enciende RTDS
-	HAL_Delay(2000);
-	HAL_GPIO_WritePin(RTDS_GPIO_Port, RTDS_Pin, GPIO_PIN_RESET); // Apaga RTDS
-
-#endif
-
-#if DEBUG
-	print("RTDS apagado");
-#endif
 
 	// Avisar a resto de ECUs de que pueden comenzar ya a mandar datos al CAN (RTD_all)
 	// Inicia telemetria y activa los ventiladores
@@ -1425,7 +1435,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 						else if (config_inv_lectura_v == 1)
 						{
 							//inv_dc_bus_voltage = (int)RxData_Inv[1] << 8 | (int)RxData_Inv[0];
-							inv_dc_bus_voltage = RxData_Inv[2];
+							inv_dc_bus_voltage = RxData_Inv[3] << 8 | RxData_Inv[2];
 							//							byte0_voltage = RxData_Inv[0];
 							//							byte1_voltage = RxData_Inv[1];
 							//inv_dc_bus_power = (int)RxData_Inv[2] << 8 | (int)RxData_Inv[1];
@@ -1716,18 +1726,17 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 #if DEBUG
 			//print("state: standby");
 #endif
-			if (flag_r2d == 1){
-				flag_react = 0;
-				// Estado READY inversor
-				TxHeader_Inv.Identifier = RX_SETPOINT_1;
-				TxHeader_Inv.DataLength = 3;
-				TxHeader_Inv.IdType = FDCAN_STANDARD_ID;
+			flag_react = 0;
+			// Estado READY inversor
+			TxHeader_Inv.Identifier = RX_SETPOINT_1;
+			TxHeader_Inv.DataLength = 3;
+			TxHeader_Inv.IdType = FDCAN_STANDARD_ID;
 
-				TxData_Inv[0] = 0x0;
-				TxData_Inv[1] = 0x0;
-				TxData_Inv[2] = 0x4;
-				HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader_Inv, TxData_Inv);
-			}
+			TxData_Inv[0] = 0x0;
+			TxData_Inv[1] = 0x0;
+			TxData_Inv[2] = 0x4;
+			HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader_Inv, TxData_Inv);
+
 
 
 			// while (state != 4) {
@@ -1751,6 +1760,18 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 				TxData_Inv[3] = 0x0;
 				HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader_Inv, TxData_Inv);
 				flag_react = 0; // Reactivado
+			}
+			else{
+				flag_react = 0;
+				// Estado READY inversor
+				TxHeader_Inv.Identifier = RX_SETPOINT_1;
+				TxHeader_Inv.DataLength = 3;
+				TxHeader_Inv.IdType = FDCAN_STANDARD_ID;
+
+				TxData_Inv[0] = 0x0;
+				TxData_Inv[1] = 0x0;
+				TxData_Inv[2] = 0x4;
+				HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader_Inv, TxData_Inv);
 			}
 
 			break;
