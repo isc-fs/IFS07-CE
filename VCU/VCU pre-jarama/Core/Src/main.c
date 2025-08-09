@@ -407,8 +407,7 @@ int main(void)
 			TxHeader_Acu.TxFrameType = FDCAN_DATA_FRAME;
 
 
-			TxData_Acu[0] = 0x0;
-			TxData_Acu[1] = 0x0;
+			TxData_Acu[0] = precharge_button;
 
 			if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, &TxHeader_Acu, TxData_Acu) == HAL_OK)
 			{
@@ -1730,6 +1729,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 		precharge_button = HAL_GPIO_ReadPin(START_BUTTON_GPIO_Port,
 											START_BUTTON_Pin);
+
+		printValue(precharge_button);
 		if (precharge_button == 1){
 			TxHeader_Acu.Identifier = 0x600;
 			TxHeader_Acu.DataLength = 2;
@@ -1738,8 +1739,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			TxHeader_Acu.TxFrameType = FDCAN_DATA_FRAME;
 
 
-			TxData_Acu[0] = 0x0;
-			TxData_Acu[1] = 0x0;
+			TxData_Acu[0] = precharge_button;
 
 			if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, &TxHeader_Acu, TxData_Acu) == HAL_OK)
 			{
