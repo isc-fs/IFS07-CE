@@ -328,6 +328,7 @@ void select_state() {
 void parse_state(CANMsg data) {
 	if (data.id == 0x600){
 		flag_start_button = data.buf[0];
+		printValue(flag_start_button);
 	}
 
 	if (data.id == 0x100){
