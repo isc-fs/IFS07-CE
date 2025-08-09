@@ -174,6 +174,8 @@ int flag_EV_2_3 = 0;
 int flag_T11_8_9 = 0;
 int count_T11_8_9 = 0;
 
+int precharge_button = 0;
+
 char uart_msg[100];
 char TxBuffer[250];
 uint8_t error = 0;
@@ -395,6 +397,29 @@ int main(void)
 #endif
 		}
 
+		precharge_button = HAL_GPIO_ReadPin(START_BUTTON_GPIO_Port,
+											START_BUTTON_Pin);
+		if (precharge_button == 1){
+			TxHeader_Acu.Identifier = 0x600;
+			TxHeader_Acu.DataLength = 2;
+			TxHeader_Acu.IdType = FDCAN_EXTENDED_ID;
+			TxHeader_Acu.FDFormat = FDCAN_CLASSIC_CAN;
+			TxHeader_Acu.TxFrameType = FDCAN_DATA_FRAME;
+
+
+			TxData_Acu[0] = 0x0;
+			TxData_Acu[1] = 0x0;
+
+			if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, &TxHeader_Acu, TxData_Acu) == HAL_OK)
+			{
+	#if DEBUG
+				//print("CAN_ACU: DC_BUS_VOLTAGE enviado a AMS");
+	#endif
+			}
+		}
+
+
+
 		if (precarga_inv == 1)
 		{
 #if DEBUG
@@ -425,17 +450,8 @@ int main(void)
 	// Espera a que se pulse el botón de arranque mientras se pisa el freno
 	while (boton_arranque == 0)
 	{
-		HAL_ADC_Start(&hadc1);
-		HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
 
-		s_freno = HAL_ADC_GetValue(&hadc1);
 
-		HAL_ADC_Stop(&hadc1);
-
-		printValue(s_freno);
-
-		start_button_act = HAL_GPIO_ReadPin(START_BUTTON_GPIO_Port,
-											START_BUTTON_Pin);
 
 		printValue(start_button_act);
 		print("Botón Start + Freno:");
@@ -1682,6 +1698,45 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	if (htim == &htim16)
 	{
+		// Reenvío DC_BUS_VOLTAGE al AMS por CAN_ACU
+		TxHeader_Acu.Identifier = ID_dc_bus_voltage;
+		TxHeader_Acu.DataLength = 2;
+		TxHeader_Acu.IdType = FDCAN_EXTENDED_ID;
+		TxHeader_Acu.FDFormat = FDCAN_CLASSIC_CAN;
+		TxHeader_Acu.TxFrameType = FDCAN_DATA_FRAME;
+
+		/*		TxData_Acu[0] = byte0_voltage;
+		 TxData_Acu[1] = byte1_voltage;*/
+		TxData_Acu[0] = inv_dc_bus_voltage & 0xFF;
+		TxData_Acu[1] = (inv_dc_bus_voltage >> 8) & 0xFF;
+		if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, &TxHeader_Acu, TxData_Acu) == HAL_OK)
+		{
+#if DEBUG
+			//print("CAN_ACU: DC_BUS_VOLTAGE enviado a AMS");
+#endif
+		}
+
+		precharge_button = HAL_GPIO_ReadPin(START_BUTTON_GPIO_Port,
+											START_BUTTON_Pin);
+		if (precharge_button == 1){
+			TxHeader_Acu.Identifier = 0x600;
+			TxHeader_Acu.DataLength = 2;
+			TxHeader_Acu.IdType = FDCAN_EXTENDED_ID;
+			TxHeader_Acu.FDFormat = FDCAN_CLASSIC_CAN;
+			TxHeader_Acu.TxFrameType = FDCAN_DATA_FRAME;
+
+
+			TxData_Acu[0] = 0x0;
+			TxData_Acu[1] = 0x0;
+
+			if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, &TxHeader_Acu, TxData_Acu) == HAL_OK)
+			{
+	#if DEBUG
+				//print("CAN_ACU: DC_BUS_VOLTAGE enviado a AMS");
+	#endif
+			}
+		}
+
 
 #if CALIBRATION
 		real_torque = setTorque();
