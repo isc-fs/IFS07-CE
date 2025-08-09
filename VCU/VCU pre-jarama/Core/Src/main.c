@@ -375,7 +375,7 @@ int main(void)
 
 #if DEBUG
 		sprintf(TxBuffer, "DC_BUS_VOLTAGE: %i V\r\n", inv_dc_bus_voltage);
-		print(TxBuffer);
+		//print(TxBuffer);
 		// printValue((int) ((byte1_voltage << 8) | byte0_voltage));
 #endif
 
@@ -446,6 +446,14 @@ int main(void)
 
 #endif
 
+	/*
+	 * TIM16 -> APB2 => 264MHzw
+	 * 10 ms interruption => 10ms * 264MHz = 2640000
+	 * preescalado 264 (por ejemplo)
+	 * timer count = 2640000 / 264 = 10000
+	 */
+	HAL_TIM_Base_Start_IT(&htim16);
+
 #if !CALIBRATION
 	// Espera a que se pulse el botón de arranque mientras se pisa el freno
 	while (boton_arranque == 0)
@@ -453,8 +461,8 @@ int main(void)
 
 
 
-		printValue(start_button_act);
-		print("Botón Start + Freno:");
+		//printValue(start_button_act);
+		//print("Botón Start + Freno:");
 		if (start_button_act == 1)
 		{
 
@@ -494,14 +502,6 @@ int main(void)
 #if DEBUG
 	print("RTDS apagado");
 #endif
-
-	/*
-	 * TIM16 -> APB2 => 264MHzw
-	 * 10 ms interruption => 10ms * 264MHz = 2640000
-	 * preescalado 264 (por ejemplo)
-	 * timer count = 2640000 / 264 = 10000
-	 */
-	HAL_TIM_Base_Start_IT(&htim16);
 
 	// Estado STAND BY inversor
 	while (state != 3)
@@ -1448,10 +1448,11 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 						{
 							config_inv_lectura_v = 1;
 						}
-						else if (config_inv_lectura_v == 1)
+						if (config_inv_lectura_v == 1)
 						{
 							//inv_dc_bus_voltage = (int)RxData_Inv[1] << 8 | (int)RxData_Inv[0];
 							inv_dc_bus_voltage = RxData_Inv[3] << 8 | RxData_Inv[2];
+							//printValue(inv_dc_bus_voltage);
 							//							byte0_voltage = RxData_Inv[0];
 							//							byte1_voltage = RxData_Inv[1];
 							//inv_dc_bus_power = (int)RxData_Inv[2] << 8 | (int)RxData_Inv[1];
@@ -1709,6 +1710,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		 TxData_Acu[1] = byte1_voltage;*/
 		TxData_Acu[0] = inv_dc_bus_voltage & 0xFF;
 		TxData_Acu[1] = (inv_dc_bus_voltage >> 8) & 0xFF;
+		printValue(inv_dc_bus_voltage);
 		if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, &TxHeader_Acu, TxData_Acu) == HAL_OK)
 		{
 #if DEBUG
@@ -1765,58 +1767,23 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader_Inv, TxData_Inv);
 		}
 
-		switch (state)
-		{
-		case 0:
-			TxHeader_Inv.Identifier = RX_SETPOINT_1;
-			TxHeader_Inv.DataLength = 3;
-			TxHeader_Inv.IdType = FDCAN_STANDARD_ID;
-
-			TxData_Inv[0] = 0x0;
-			TxData_Inv[1] = 0x0;
-			TxData_Inv[2] = 0x1;
-			HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader_Inv, TxData_Inv);
-
-		case 3:
-#if DEBUG
-			//print("state: standby");
-#endif
-			flag_react = 0;
-			// Estado READY inversor
-			TxHeader_Inv.Identifier = RX_SETPOINT_1;
-			TxHeader_Inv.DataLength = 3;
-			TxHeader_Inv.IdType = FDCAN_STANDARD_ID;
-
-			TxData_Inv[0] = 0x0;
-			TxData_Inv[1] = 0x0;
-			TxData_Inv[2] = 0x4;
-			HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader_Inv, TxData_Inv);
-
-
-
-			// while (state != 4) {
-
-			//}
-
-		case 4:
-
-#if DEBUG
-			print("state: ready");
-#endif
-			if (flag_r2d == 1){
-				TxHeader_Inv.Identifier = 0x362;
-				TxHeader_Inv.DataLength = 4;
-
-				real_torque = 0;
+		if(flag_r2d == 1){
+			switch (state)
+			{
+			case 0:
+				TxHeader_Inv.Identifier = RX_SETPOINT_1;
+				TxHeader_Inv.DataLength = 3;
+				TxHeader_Inv.IdType = FDCAN_STANDARD_ID;
 
 				TxData_Inv[0] = 0x0;
 				TxData_Inv[1] = 0x0;
-				TxData_Inv[2] = real_torque;
-				TxData_Inv[3] = 0x0;
+				TxData_Inv[2] = 0x1;
 				HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader_Inv, TxData_Inv);
-				flag_react = 0; // Reactivado
-			}
-			else{
+
+			case 3:
+	#if DEBUG
+				//print("state: standby");
+	#endif
 				flag_react = 0;
 				// Estado READY inversor
 				TxHeader_Inv.Identifier = RX_SETPOINT_1;
@@ -1827,130 +1794,167 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 				TxData_Inv[1] = 0x0;
 				TxData_Inv[2] = 0x4;
 				HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader_Inv, TxData_Inv);
-			}
 
-			break;
-		case 6:
-			print("state: torque");
 
-			// Request TORQUE inversor
 
-			// flag_react = 1;
+				// while (state != 4) {
 
-			real_torque = setTorque();
+				//}
 
-			TxHeader_Inv.Identifier = 0x362;
-			TxHeader_Inv.DataLength = 4;
+			case 4:
 
-			// real_torque = 0;
-			byte_torque_1 = real_torque & 0xFF;
-			byte_torque_2 = (real_torque >> 8) & 0xFF;
-			TxData_Inv[0] = 0x00;
-			TxData_Inv[1] = 0x00;
-			/*if(acelera > 0 && frena == 0){
-				acelera++;
-				TxData_Inv[2] = 0xFE;
-				TxData_Inv[3] = 0xFF;
-			}
-			if(acelera > 250){
-				TxData_Inv[2] = 0xFD;
-				TxData_Inv[3] = 0xFF;
-			}
-			if(acelera > 350){
-				TxData_Inv[2] = 0x0;
-				TxData_Inv[3] = 0x0;
-				frena = 1;
-				acelera = 0;
-			}
-			if(frena > 0 && acelera == 0){
-				frena++;
-				TxData_Inv[2] = 0x0;
-				TxData_Inv[3] = 0x0;
-				if(frena > 500){
-					acelera = 1;
-					frena = 0;
+	#if DEBUG
+				print("state: ready");
+	#endif
+				if (flag_r2d == 1){
+					TxHeader_Inv.Identifier = 0x362;
+					TxHeader_Inv.DataLength = 4;
+
+					real_torque = 0;
+
+					TxData_Inv[0] = 0x0;
+					TxData_Inv[1] = 0x0;
+					TxData_Inv[2] = real_torque;
+					TxData_Inv[3] = 0x0;
+					HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader_Inv, TxData_Inv);
+					flag_react = 0; // Reactivado
 				}
-			}*/
-			TxData_Inv[2] = byte_torque_1;
-			TxData_Inv[3] = byte_torque_2;
-			// TxData_Inv[2] = 0xFE;
-			// TxData_Inv[3] = 0xFF;
-			HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader_Inv, TxData_Inv);
-			//CAN_bus_off_check_reset(&hfdcan1);
-
-			break;
-
-		case 10:
-			print("state: soft fault");
-			printValue(error);
-
-			// Estado READY inversor
-			TxHeader_Inv.Identifier = RX_SETPOINT_1;
-			TxHeader_Inv.DataLength = 3;
-			TxHeader_Inv.IdType = FDCAN_STANDARD_ID;
-
-			TxData_Inv[0] = 0x0;
-			TxData_Inv[1] = 0x0;
-			TxData_Inv[2] = 0x13;
-			HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader_Inv, TxData_Inv);
-			/*switch (error) {
-			case 1:
-				print("Error: Lost msg");
-				break;
-
-			case 2:
-				print("Error: Undervoltage");
-				break;
-			case 3:
-				print("Error: Overtemperature");
-				break;
-			}*/
-
-			/*if (inv_dc_bus_voltage < 60)
-			{
-
-				// Estado STAND BY inversor
-				while (state != 3)
-				{
-
-					flag_react = 1;
-
+				else{
+					flag_react = 0;
+					// Estado READY inversor
 					TxHeader_Inv.Identifier = RX_SETPOINT_1;
 					TxHeader_Inv.DataLength = 3;
 					TxHeader_Inv.IdType = FDCAN_STANDARD_ID;
 
 					TxData_Inv[0] = 0x0;
 					TxData_Inv[1] = 0x0;
-					TxData_Inv[2] = 0x3;
-					HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader_Inv,
-												  TxData_Inv);
+					TxData_Inv[2] = 0x4;
+					HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader_Inv, TxData_Inv);
+				}
+
+				break;
+			case 6:
+				print("state: torque");
+
+				// Request TORQUE inversor
+
+				// flag_react = 1;
+
+				real_torque = setTorque();
+
+				TxHeader_Inv.Identifier = 0x362;
+				TxHeader_Inv.DataLength = 4;
+
+				// real_torque = 0;
+				byte_torque_1 = real_torque & 0xFF;
+				byte_torque_2 = (real_torque >> 8) & 0xFF;
+				TxData_Inv[0] = 0x00;
+				TxData_Inv[1] = 0x00;
+				/*if(acelera > 0 && frena == 0){
+					acelera++;
+					TxData_Inv[2] = 0xFE;
+					TxData_Inv[3] = 0xFF;
+				}
+				if(acelera > 250){
+					TxData_Inv[2] = 0xFD;
+					TxData_Inv[3] = 0xFF;
+				}
+				if(acelera > 350){
+					TxData_Inv[2] = 0x0;
+					TxData_Inv[3] = 0x0;
+					frena = 1;
+					acelera = 0;
+				}
+				if(frena > 0 && acelera == 0){
+					frena++;
+					TxData_Inv[2] = 0x0;
+					TxData_Inv[3] = 0x0;
+					if(frena > 500){
+						acelera = 1;
+						frena = 0;
+					}
+				}*/
+				TxData_Inv[2] = byte_torque_1;
+				TxData_Inv[3] = byte_torque_2;
+				// TxData_Inv[2] = 0xFE;
+				// TxData_Inv[3] = 0xFF;
+				HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader_Inv, TxData_Inv);
+				//CAN_bus_off_check_reset(&hfdcan1);
+
+				break;
+
+			case 10:
+				print("state: soft fault");
+				printValue(error);
+
+				// Estado READY inversor
+				TxHeader_Inv.Identifier = RX_SETPOINT_1;
+				TxHeader_Inv.DataLength = 3;
+				TxHeader_Inv.IdType = FDCAN_STANDARD_ID;
+
+				TxData_Inv[0] = 0x0;
+				TxData_Inv[1] = 0x0;
+				TxData_Inv[2] = 0x13;
+				HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader_Inv, TxData_Inv);
+				/*switch (error) {
+				case 1:
+					print("Error: Lost msg");
+					break;
+
+				case 2:
+					print("Error: Undervoltage");
+					break;
+				case 3:
+					print("Error: Overtemperature");
+					break;
 				}*/
 
-		case 11:
-			print("state: hard fault");
-			flag_react = 1;
-			TxHeader_Inv.Identifier = RX_SETPOINT_1;
-			TxHeader_Inv.DataLength = 3;
-			TxHeader_Inv.IdType = FDCAN_STANDARD_ID;
+				/*if (inv_dc_bus_voltage < 60)
+				{
 
-			TxData_Inv[0] = 0x0;
-			TxData_Inv[1] = 0x0;
-			TxData_Inv[2] = 13;
-			HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader_Inv, TxData_Inv);
+					// Estado STAND BY inversor
+					while (state != 3)
+					{
 
-		case 13:
-			print("state: shutdown");
-			TxHeader_Inv.Identifier = RX_SETPOINT_1;
-			TxHeader_Inv.DataLength = 3;
-			TxHeader_Inv.IdType = FDCAN_STANDARD_ID;
+						flag_react = 1;
 
-			TxData_Inv[0] = 0x0;
-			TxData_Inv[1] = 0x0;
-			TxData_Inv[2] = 0x1;
-			HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader_Inv, TxData_Inv);
+						TxHeader_Inv.Identifier = RX_SETPOINT_1;
+						TxHeader_Inv.DataLength = 3;
+						TxHeader_Inv.IdType = FDCAN_STANDARD_ID;
+
+						TxData_Inv[0] = 0x0;
+						TxData_Inv[1] = 0x0;
+						TxData_Inv[2] = 0x3;
+						HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader_Inv,
+													  TxData_Inv);
+					}*/
+
+			case 11:
+				print("state: hard fault");
+				flag_react = 1;
+				TxHeader_Inv.Identifier = RX_SETPOINT_1;
+				TxHeader_Inv.DataLength = 3;
+				TxHeader_Inv.IdType = FDCAN_STANDARD_ID;
+
+				TxData_Inv[0] = 0x0;
+				TxData_Inv[1] = 0x0;
+				TxData_Inv[2] = 13;
+				HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader_Inv, TxData_Inv);
+
+			case 13:
+				print("state: shutdown");
+				TxHeader_Inv.Identifier = RX_SETPOINT_1;
+				TxHeader_Inv.DataLength = 3;
+				TxHeader_Inv.IdType = FDCAN_STANDARD_ID;
+
+				TxData_Inv[0] = 0x0;
+				TxData_Inv[1] = 0x0;
+				TxData_Inv[2] = 0x1;
+				HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader_Inv, TxData_Inv);
 
 
-			break;
+				break;
+			}
 		}
 #endif
 	}

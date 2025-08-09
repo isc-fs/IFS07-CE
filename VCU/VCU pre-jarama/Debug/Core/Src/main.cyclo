@@ -23,7 +23,7 @@
 ../Core/Src/main.c:1383:6:ADC2_Select_RL	2
 ../Core/Src/main.c:1398:6:ADC2_Select_RR	2
 ../Core/Src/main.c:1413:6:HAL_FDCAN_RxFifo0Callback	22
-../Core/Src/main.c:1512:6:HAL_FDCAN_ErrorStatusCallback	1
-../Core/Src/main.c:1532:10:setTorque	18
-../Core/Src/main.c:1697:6:HAL_TIM_PeriodElapsedCallback	14
-../Core/Src/main.c:2140:6:Error_Handler	1
+../Core/Src/main.c:1513:6:HAL_FDCAN_ErrorStatusCallback	1
+../Core/Src/main.c:1533:10:setTorque	18
+../Core/Src/main.c:1698:6:HAL_TIM_PeriodElapsedCallback	15
+../Core/Src/main.c:2144:6:Error_Handler	1
