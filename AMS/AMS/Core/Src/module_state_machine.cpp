@@ -215,7 +215,9 @@ void select_state() {
 		state_air_p = 1;
 		state_precharge = 1;
 		CPU.updateState(CPU_POWER);
-		print((char*)"run");
+		//print((char*)"run");
+		printValue(CPU.DC_BUS);
+		flag_start_button = 0;
 		if(CPU.DC_BUS < 60){
 			state = start;
 		}
