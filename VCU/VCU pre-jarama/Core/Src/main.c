@@ -452,17 +452,27 @@ int main(void)
 	 * preescalado 264 (por ejemplo)
 	 * timer count = 2640000 / 264 = 10000
 	 */
-	HAL_TIM_Base_Start_IT(&htim16);
-
 #if !CALIBRATION
+	HAL_TIM_Base_Start_IT(&htim16);
+#endif
+
+#if 1
 	// Espera a que se pulse el botón de arranque mientras se pisa el freno
 	while (boton_arranque == 0)
 	{
 
+		HAL_ADC_Start(&hadc1);
+		HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
 
+		s_freno = HAL_ADC_GetValue(&hadc1);
 
-		//printValue(start_button_act);
-		//print("Botón Start + Freno:");
+		HAL_ADC_Stop(&hadc1);
+
+		printValue(s_freno);
+
+		start_button_act = HAL_GPIO_ReadPin(START_BUTTON_GPIO_Port,
+											START_BUTTON_Pin);
+
 		if (start_button_act == 1)
 		{
 
