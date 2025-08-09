@@ -44,6 +44,9 @@ int flag_charger = 0; //For knowing whether I am charging or in the car
 static uint32_t charge_current_error_counter = 0;
 int flag_ams_ok = 1;
 
+int flag_first_time = 0;
+int flag_start_button = 0;
+
 Current_MOD current(Current_ID, Current_max); //Class for current measurement
 
 static STATE state = start; //Variable on the state machine
@@ -85,6 +88,11 @@ void select_state() {
 
 
 	int gpio_charge = HAL_GPIO_ReadPin(Charge_Button_GPIO_Port, Charge_Button_Pin); // pull-up: 1 = charge started
+
+	if (flag_first_time == 0){
+		flag_first_time = 1;
+		HAL_Delay(1000);
+	}
 	//printValue(gpio_charge);
 
 	/*
@@ -178,7 +186,7 @@ void select_state() {
 		if(gpio_charge == GPIO_PIN_SET){
 			//state = charge;
 		}
-		if (flag_cpu != CPU_ERROR_COMMUNICATION)
+		if (flag_cpu != CPU_ERROR_COMMUNICATION && flag_start_button == 1)
 			state = precharge; //If I do comunicate with the rest of the car, I go to precharge
 		break;
 	case precharge:
@@ -313,6 +321,9 @@ void select_state() {
  ** Descriptions:            Function for analysing the data from the CAN
  *********************************************************************************************************/
 void parse_state(CANMsg data) {
+	if (data.id == 0x500){
+		flag_start_button = 1;
+	}
 	uint32_t time = HAL_GetTick();
 	bool flag_bms = false;
 
