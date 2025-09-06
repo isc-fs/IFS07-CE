@@ -73,8 +73,8 @@ void Error_Handler(void);
 #define S_APPS_2_GPIO_Port GPIOB
 #define S_FRENO_Pin GPIO_PIN_11
 #define S_FRENO_GPIO_Port GPIOF
-#define SUSPENSION_FL_Pin GPIO_PIN_13
-#define SUSPENSION_FL_GPIO_Port GPIOF
+#define START_BUTTON_Pin GPIO_PIN_13
+#define START_BUTTON_GPIO_Port GPIOF
 #define SUSPENSION_FR_Pin GPIO_PIN_14
 #define SUSPENSION_FR_GPIO_Port GPIOF
 #define MICROSD_DET_Pin GPIO_PIN_15
@@ -85,8 +85,8 @@ void Error_Handler(void);
 #define PWM_FAN1_GPIO_Port GPIOE
 #define PWM_FAN2_Pin GPIO_PIN_11
 #define PWM_FAN2_GPIO_Port GPIOE
-#define START_BUTTON_Pin GPIO_PIN_7
-#define START_BUTTON_GPIO_Port GPIOG
+#define START_BUTTON1_Pin GPIO_PIN_7
+#define START_BUTTON1_GPIO_Port GPIOG
 #define USART1_TX_GPS_Pin GPIO_PIN_9
 #define USART1_TX_GPS_GPIO_Port GPIOA
 #define USART1_RX_GPS_Pin GPIO_PIN_10

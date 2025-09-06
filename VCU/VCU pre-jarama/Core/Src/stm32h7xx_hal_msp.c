@@ -170,7 +170,6 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
     /**ADC2 GPIO Configuration
     PC5     ------> ADC2_INP8
     PB0     ------> ADC2_INP9
-    PF13     ------> ADC2_INP2
     PF14     ------> ADC2_INP6
     */
     GPIO_InitStruct.Pin = SUSPENSION_RL_Pin;
@@ -183,10 +182,10 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(SUSPENSION_RR_GPIO_Port, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin = SUSPENSION_FL_Pin|SUSPENSION_FR_Pin;
+    GPIO_InitStruct.Pin = SUSPENSION_FR_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
+    HAL_GPIO_Init(SUSPENSION_FR_GPIO_Port, &GPIO_InitStruct);
 
     /* ADC2 interrupt Init */
     HAL_NVIC_SetPriority(ADC_IRQn, 0, 0);
@@ -260,14 +259,13 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc)
     /**ADC2 GPIO Configuration
     PC5     ------> ADC2_INP8
     PB0     ------> ADC2_INP9
-    PF13     ------> ADC2_INP2
     PF14     ------> ADC2_INP6
     */
     HAL_GPIO_DeInit(SUSPENSION_RL_GPIO_Port, SUSPENSION_RL_Pin);
 
     HAL_GPIO_DeInit(SUSPENSION_RR_GPIO_Port, SUSPENSION_RR_Pin);
 
-    HAL_GPIO_DeInit(GPIOF, SUSPENSION_FL_Pin|SUSPENSION_FR_Pin);
+    HAL_GPIO_DeInit(SUSPENSION_FR_GPIO_Port, SUSPENSION_FR_Pin);
 
     /* ADC2 interrupt DeInit */
   /* USER CODE BEGIN ADC2:ADC_IRQn disable */

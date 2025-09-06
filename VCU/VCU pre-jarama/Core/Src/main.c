@@ -467,7 +467,8 @@ int main(void)
 
 		HAL_ADC_Stop(&hadc1);
 
-		printValue(s_freno);
+		//printValue(s_freno);
+		print("Pulsa botón");
 
 		start_button_act = HAL_GPIO_ReadPin(START_BUTTON_GPIO_Port,
 											START_BUTTON_Pin);
@@ -476,7 +477,8 @@ int main(void)
 		{
 
 #if DEBUG
-			printValue(s_freno);
+			//printValue(s_freno);
+			print("Pulsa freno");
 #endif
 			if (s_freno > 900)
 			{
@@ -1292,6 +1294,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : START_BUTTON_Pin */
+  GPIO_InitStruct.Pin = START_BUTTON_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(START_BUTTON_GPIO_Port, &GPIO_InitStruct);
+
   /*Configure GPIO pin : MICROSD_DET_Pin */
   GPIO_InitStruct.Pin = MICROSD_DET_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
@@ -1305,11 +1313,11 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(DS18B20_Data_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : START_BUTTON_Pin */
-  GPIO_InitStruct.Pin = START_BUTTON_Pin;
+  /*Configure GPIO pin : START_BUTTON1_Pin */
+  GPIO_InitStruct.Pin = START_BUTTON1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-  HAL_GPIO_Init(START_BUTTON_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(START_BUTTON1_GPIO_Port, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
@@ -1588,7 +1596,7 @@ uint16_t setTorque()
 		s2_aceleracion_aux = 100;
 	}
 
-#if 1
+#if 0
 	print("Sensor % 1: ");
 	printValue(s1_aceleracion_aux);
 	print("");
@@ -1719,7 +1727,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		 TxData_Acu[1] = byte1_voltage;*/
 		TxData_Acu[0] = inv_dc_bus_voltage & 0xFF;
 		TxData_Acu[1] = (inv_dc_bus_voltage >> 8) & 0xFF;
-		printValue(inv_dc_bus_voltage);
+		//printValue(inv_dc_bus_voltage);
 		if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, &TxHeader_Acu, TxData_Acu) == HAL_OK)
 		{
 #if DEBUG
@@ -1727,26 +1735,23 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 #endif
 		}
 
-		precharge_button = HAL_GPIO_ReadPin(START_BUTTON_GPIO_Port,
-											START_BUTTON_Pin);
+		precharge_button = HAL_GPIO_ReadPin(START_BUTTON_GPIO_Port, START_BUTTON_Pin);
 
-		printValue(precharge_button);
-		if (precharge_button == 1){
-			TxHeader_Acu.Identifier = 0x600;
-			TxHeader_Acu.DataLength = 2;
-			TxHeader_Acu.IdType = FDCAN_EXTENDED_ID;
-			TxHeader_Acu.FDFormat = FDCAN_CLASSIC_CAN;
-			TxHeader_Acu.TxFrameType = FDCAN_DATA_FRAME;
+		TxHeader_Acu.Identifier = 0x600;
+		TxHeader_Acu.DataLength = 2;
+		TxHeader_Acu.IdType = FDCAN_EXTENDED_ID;
+		TxHeader_Acu.FDFormat = FDCAN_CLASSIC_CAN;
+		TxHeader_Acu.TxFrameType = FDCAN_DATA_FRAME;
 
 
-			TxData_Acu[0] = precharge_button;
+		TxData_Acu[0] = precharge_button;
+		printValue(TxData_Acu[0]);
 
-			if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, &TxHeader_Acu, TxData_Acu) == HAL_OK)
-			{
-	#if DEBUG
-				//print("CAN_ACU: DC_BUS_VOLTAGE enviado a AMS");
-	#endif
-			}
+		if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, &TxHeader_Acu, TxData_Acu) == HAL_OK)
+		{
+#if DEBUG
+			//print("CAN_ACU: DC_BUS_VOLTAGE enviado a AMS");
+#endif
 		}
 
 
